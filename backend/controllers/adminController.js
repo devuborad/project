@@ -142,10 +142,104 @@ const updateUserStatus = async (req, res, next) => {
   }
 };
 
+const updateUserProfile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { first_name, last_name, ...rest } = req.body;
+
+    const [users] = await db.execute('SELECT role FROM users WHERE id = ?', [id]);
+    if (users.length === 0) return res.status(404).json({ error: 'User not found' });
+    const role = users[0].role;
+
+    if (first_name || last_name) {
+      await db.execute(`
+        UPDATE users SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name) WHERE id = ?
+      `, [first_name, last_name, id]);
+    }
+
+    if (role === 'student') {
+      const { major, graduation_year, bio, github_url, linkedin_url, prn_number } = rest;
+      await db.execute(`
+        UPDATE student_profiles 
+        SET major = COALESCE(?, major), graduation_year = COALESCE(?, graduation_year), 
+            bio = COALESCE(?, bio), github_url = COALESCE(?, github_url), 
+            linkedin_url = COALESCE(?, linkedin_url), prn_number = COALESCE(?, prn_number)
+        WHERE user_id = ?
+      `, [major, graduation_year, bio, github_url, linkedin_url, prn_number, id]);
+    } else if (role === 'faculty') {
+      const { department, title, office_location } = rest;
+      await db.execute(`
+        UPDATE faculty_profiles 
+        SET department = COALESCE(?, department), title = COALESCE(?, title), office_location = COALESCE(?, office_location)
+        WHERE user_id = ?
+      `, [department, title, office_location, id]);
+    }
+
+    res.json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getClubRequests = async (req, res, next) => {
+  try {
+    const [requests] = await db.execute(`
+      SELECT cm.club_id, c.name as club_name, cm.student_id, u.first_name, u.last_name, u.email, cm.sys_admin_approved, cm.club_admin_approved, cm.joined_at
+      FROM club_members cm
+      JOIN clubs c ON cm.club_id = c.id
+      JOIN student_profiles sp ON cm.student_id = sp.id
+      JOIN users u ON sp.user_id = u.id
+      WHERE cm.sys_admin_approved = FALSE
+    `);
+    res.json(requests);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const approveClubRequest = async (req, res, next) => {
+  try {
+    const { club_id, student_id } = req.params;
+    await db.execute('UPDATE club_members SET sys_admin_approved = TRUE WHERE club_id = ? AND student_id = ?', [club_id, student_id]);
+    res.json({ message: 'System Admin approved club request' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get System Admin Overview
+const getOverview = async (req, res, next) => {
+  try {
+    const [[{ totalUsers }]] = await db.execute('SELECT COUNT(*) as totalUsers FROM users');
+    const [[{ activeClubs }]] = await db.execute('SELECT COUNT(*) as activeClubs FROM clubs');
+    const [[{ pendingApprovals }]] = await db.execute('SELECT COUNT(*) as pendingApprovals FROM club_members WHERE sys_admin_approved = FALSE');
+
+    const [recentActivity] = await db.execute(`
+      SELECT 'User Registration' as activity_type, CONCAT(first_name, ' ', last_name, ' joined CampusAI') as description, created_at
+      FROM users
+      ORDER BY created_at DESC
+      LIMIT 3
+    `);
+
+    res.json({
+      totalUsers,
+      activeClubs,
+      pendingApprovals,
+      recentActivity
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllUsers,
   updateUserRole,
   deleteUser,
   createUser,
-  updateUserStatus
+  updateUserStatus,
+  updateUserProfile,
+  getClubRequests,
+  approveClubRequest,
+  getOverview
 };

@@ -12,6 +12,10 @@
   body {
     @apply bg-gray-50 dark:bg-brand-dark text-gray-900 dark:text-white antialiased overflow-x-hidden selection:bg-brand-primary selection:text-white transition-colors duration-300;
   }
+
+  .dark option {
+    @apply bg-brand-dark text-white;
+  }
 }
 
 @layer utilities {
@@ -67,14 +71,15 @@
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #050505;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
+  background: rgba(156, 163, 175, 0.5);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4a4a4a;
+  background: rgba(107, 114, 128, 0.8);
 }

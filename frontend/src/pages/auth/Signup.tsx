@@ -11,6 +11,7 @@ export function Signup() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
+  const [prnNumber, setPrnNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -39,6 +40,7 @@ export function Signup() {
           last_name: lastName || 'User', 
           email, 
           mobile_number: mobileNumber,
+          prn_number: role === 'student' ? prnNumber : undefined,
           password, 
           role
         })
@@ -159,6 +161,23 @@ export function Signup() {
             />
           </div>
         </div>
+
+        {role === 'student' && (
+          <div className="space-y-1 relative">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">PRN Number</label>
+            <div className="relative group">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-brand-primary transition-colors" />
+              <input 
+                type="text" 
+                value={prnNumber}
+                onChange={(e) => setPrnNumber(e.target.value)}
+                placeholder="e.g. 123456789" 
+                className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-12 pr-4 text-gray-900 dark:text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary focus:bg-gray-200 dark:bg-white/10 transition-all"
+                required
+              />
+            </div>
+          </div>
+        )}
 
         <div className="space-y-1 relative">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Password</label>

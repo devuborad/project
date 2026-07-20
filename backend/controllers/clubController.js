@@ -57,7 +57,7 @@ const joinClub = async (req, res, next) => {
       return res.status(400).json({ error: 'You are already a member of this club' });
     }
 
-    await db.execute('INSERT INTO club_members (club_id, student_id) VALUES (?, ?)', [club_id, student_id]);
+    await db.execute('INSERT INTO club_members (club_id, student_id, sys_admin_approved, club_admin_approved) VALUES (?, ?, FALSE, FALSE)', [club_id, student_id]);
     res.status(201).json({ message: 'Joined club successfully' });
   } catch (error) {
     next(error);
@@ -72,7 +72,7 @@ const getClubMembers = async (req, res, next) => {
     const club_id = clubs[0].id;
 
     const [members] = await db.execute(`
-      SELECT u.id as user_id, u.first_name, u.last_name, u.email, cm.role, cm.joined_at, sp.id as student_id
+      SELECT u.id as user_id, u.first_name, u.last_name, u.email, cm.role, cm.joined_at, sp.id as student_id, cm.sys_admin_approved, cm.club_admin_approved
       FROM club_members cm
       JOIN student_profiles sp ON cm.student_id = sp.id
       JOIN users u ON sp.user_id = u.id
@@ -82,7 +82,7 @@ const getClubMembers = async (req, res, next) => {
     // Include the club admin as the "Leader" explicitly
     const [adminUser] = await db.execute('SELECT id as user_id, first_name, last_name, email FROM users WHERE id = ?', [req.user.id]);
     if (adminUser.length > 0) {
-      members.unshift({ ...adminUser[0], role: 'Club Leader', joined_at: null, student_id: null });
+      members.unshift({ ...adminUser[0], role: 'Club Leader', joined_at: null, student_id: null, sys_admin_approved: 1, club_admin_approved: 1 });
     }
 
     res.json(members);
@@ -108,10 +108,62 @@ const updateMemberRole = async (req, res, next) => {
   }
 };
 
+// Approve member (Club Admin)
+const approveClubMember = async (req, res, next) => {
+  try {
+    const { student_id } = req.params;
+
+    const [clubs] = await db.execute('SELECT id FROM clubs WHERE admin_id = ?', [req.user.id]);
+    if (clubs.length === 0) return res.status(403).json({ error: 'You do not manage any club' });
+    const club_id = clubs[0].id;
+
+    await db.execute('UPDATE club_members SET club_admin_approved = TRUE WHERE club_id = ? AND student_id = ?', [club_id, student_id]);
+    res.json({ message: 'Member approved successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get Club Overview
+const getOverview = async (req, res, next) => {
+  try {
+    const [clubs] = await db.execute('SELECT id FROM clubs WHERE admin_id = ?', [req.user.id]);
+    if (clubs.length === 0) return res.status(403).json({ error: 'You do not manage any club' });
+    const club_id = clubs[0].id;
+
+    const [[{ activeMembers }]] = await db.execute('SELECT COUNT(*) as activeMembers FROM club_members WHERE club_id = ? AND club_admin_approved = 1 AND sys_admin_approved = 1', [club_id]);
+    const [[{ upcomingEvents }]] = await db.execute('SELECT COUNT(*) as upcomingEvents FROM events WHERE club_id = ? AND event_date >= CURDATE()', [club_id]);
+    const [[{ hackathons }]] = await db.execute('SELECT COUNT(*) as hackathons FROM club_hackathons WHERE club_id = ?', [club_id]);
+
+    const [recentRegistrations] = await db.execute(`
+      SELECT u.first_name, u.last_name, u.avatar_url, e.title, er.registered_at
+      FROM event_registrations er
+      JOIN events e ON er.event_id = e.id
+      JOIN student_profiles sp ON er.student_id = sp.id
+      JOIN users u ON sp.user_id = u.id
+      WHERE e.club_id = ?
+      ORDER BY er.registered_at DESC
+      LIMIT 5
+    `, [club_id]);
+
+    res.json({
+      activeMembers,
+      upcomingEvents,
+      hackathons,
+      rating: 4.9, // Mocked rating
+      recentRegistrations
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getClubs,
   createClub,
   joinClub,
   getClubMembers,
-  updateMemberRole
+  updateMemberRole,
+  approveClubMember,
+  getOverview
 };

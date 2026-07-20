@@ -1,10 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, MapPin, Video } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, Video, User } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export function FacultyCalendar() {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 6)); // July 2026
+  const [currentMonth, setCurrentMonth] = useState(new Date()); 
+  const [lectures, setLectures] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchLectures = async () => {
+      try {
+        const token = localStorage.getItem('campus_token');
+        const response = await fetch('http://localhost:5000/api/faculty/lectures', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setLectures(data);
+        }
+      } catch (error) {
+        console.error('Error fetching lectures:', error);
+      }
+    };
+    fetchLectures();
+  }, []);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
@@ -22,19 +41,31 @@ export function FacultyCalendar() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
-  // Mock events for specific days
-  const events: Record<number, any[]> = {
-    15: [
-      { id: 1, title: 'CS301 Lecture', time: '10:00 AM', type: 'lecture', location: 'Online' },
-      { id: 2, title: 'Office Hours', time: '02:00 PM', type: 'office', location: 'Room 304' }
-    ],
-    18: [
-      { id: 3, title: 'Faculty Meeting', time: '11:00 AM', type: 'meeting', location: 'Conference Room B' }
-    ],
-    22: [
-      { id: 4, title: 'CS402 Project Presentations', time: '09:00 AM', type: 'exam', location: 'Auditorium' }
-    ]
-  };
+  // Process lectures into a map for the calendar
+  // key: date number (1-31) of the current month
+  const eventsByDay: Record<number, any[]> = {};
+  
+  // also track upcoming events
+  const upcomingEvents = [...lectures]
+    .filter(l => new Date(l.date) >= new Date(new Date().setHours(0,0,0,0)))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 5);
+
+  lectures.forEach(lecture => {
+    const d = new Date(lecture.date);
+    if (d.getFullYear() === currentMonth.getFullYear() && d.getMonth() === currentMonth.getMonth()) {
+      const day = d.getDate();
+      if (!eventsByDay[day]) eventsByDay[day] = [];
+      eventsByDay[day].push({
+        id: lecture.id,
+        title: lecture.title,
+        time: lecture.time,
+        course: lecture.course,
+        type: 'lecture',
+        link: lecture.meeting_link
+      });
+    }
+  });
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -43,10 +74,6 @@ export function FacultyCalendar() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Calendar</h1>
           <p className="text-gray-600 dark:text-gray-400">Manage your schedule, office hours, and events.</p>
         </div>
-        <Button variant="gradient" className="shrink-0 group">
-          <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
-          Add Event
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -77,78 +104,63 @@ export function FacultyCalendar() {
                 <div key={`blank-${blank}`} className="bg-white dark:bg-[#1a1a1a] min-h-[120px] p-2 opacity-50" />
               ))}
               
-              {days.map((day) => (
-                <div key={day} className="bg-white dark:bg-[#1a1a1a] min-h-[120px] p-2 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors relative group border-t border-gray-100 dark:border-white/5">
-                  <span className={`inline-flex items-center justify-center w-7 h-7 text-sm font-medium rounded-full mb-1 ${
-                    day === new Date().getDate() && currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear()
-                      ? 'bg-brand-primary text-gray-900' 
-                      : 'text-gray-700 dark:text-gray-300'
-                  }`}>
-                    {day}
-                  </span>
-                  
-                  <div className="space-y-1 mt-1">
-                    {events[day]?.map((event) => (
-                      <div key={event.id} className={`px-2 py-1 text-xs rounded truncate ${
-                        event.type === 'lecture' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' :
-                        event.type === 'office' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' :
-                        event.type === 'meeting' ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300' :
-                        'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
-                      }`} title={event.title}>
-                        {event.time} - {event.title}
-                      </div>
-                    ))}
+              {days.map((day) => {
+                const isToday = day === new Date().getDate() && currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear();
+                
+                return (
+                  <div key={day} className="bg-white dark:bg-[#1a1a1a] min-h-[120px] p-2 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors relative group border-t border-gray-100 dark:border-white/5">
+                    <span className={`inline-flex items-center justify-center w-7 h-7 text-sm font-medium rounded-full mb-1 ${
+                      isToday
+                        ? 'bg-brand-primary text-gray-900' 
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}>
+                      {day}
+                    </span>
+                    
+                    <div className="space-y-1 mt-1">
+                      {eventsByDay[day]?.map((event) => (
+                        <div key={event.id} className="px-2 py-1 text-xs rounded truncate bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300" title={`${event.course}: ${event.title}`}>
+                          {event.time} - {event.course}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-
-                  <button className="absolute top-2 right-2 p-1 rounded bg-brand-primary/10 text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Plus className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </GlassCard>
         </div>
 
         <div className="space-y-6">
           <GlassCard className="p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Upcoming Events</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Upcoming Schedule</h3>
             <div className="space-y-4">
-              {[
-                { title: 'CS301 Lecture', date: 'Jul 15', time: '10:00 AM', icon: <Video className="w-4 h-4" />, color: 'text-blue-500', bg: 'bg-blue-500/20' },
-                { title: 'Office Hours', date: 'Jul 15', time: '02:00 PM', icon: <MapPin className="w-4 h-4" />, color: 'text-green-500', bg: 'bg-green-500/20' },
-                { title: 'Faculty Meeting', date: 'Jul 18', time: '11:00 AM', icon: <CalendarIcon className="w-4 h-4" />, color: 'text-purple-500', bg: 'bg-purple-500/20' },
-              ].map((item, idx) => (
+              {upcomingEvents.map((item, idx) => (
                 <div key={idx} className="flex gap-4">
-                  <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex flex-col items-center justify-center shrink-0`}>
-                    <span className="text-xs font-bold leading-tight">{item.date.split(' ')[0]}</span>
-                    <span className="text-sm font-bold leading-tight">{item.date.split(' ')[1]}</span>
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-500 flex flex-col items-center justify-center shrink-0">
+                    <span className="text-xs font-bold leading-tight">{new Date(item.date).toLocaleString('default', { month: 'short' }).toUpperCase()}</span>
+                    <span className="text-sm font-bold leading-tight">{new Date(item.date).getDate()}</span>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">{item.title}</h4>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">{item.course}</h4>
+                    <p className="text-xs text-gray-500 truncate max-w-[150px]">{item.title}</p>
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {item.time}</span>
                     </div>
                   </div>
                 </div>
               ))}
+              {upcomingEvents.length === 0 && (
+                <p className="text-sm text-gray-500">No upcoming lectures scheduled.</p>
+              )}
             </div>
-            <Button variant="outline" className="w-full mt-6 text-sm">View All Events</Button>
           </GlassCard>
 
           <GlassCard className="p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Event Types</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div> Lectures
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div> Office Hours
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <div className="w-3 h-3 rounded-full bg-purple-500"></div> Meetings
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div> Exams/Deadlines
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div> Scheduled Lectures
               </div>
             </div>
           </GlassCard>

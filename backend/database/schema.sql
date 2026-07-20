@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS student_profiles (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL UNIQUE,
+  prn_number VARCHAR(100) DEFAULT NULL,
   major VARCHAR(150),
   graduation_year INT,
   bio TEXT,
@@ -66,6 +67,8 @@ CREATE TABLE IF NOT EXISTS club_members (
   club_id INT NOT NULL,
   student_id INT NOT NULL,
   role VARCHAR(50) DEFAULT 'Member',
+  sys_admin_approved BOOLEAN DEFAULT TRUE,
+  club_admin_approved BOOLEAN DEFAULT TRUE,
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (club_id, student_id),
   FOREIGN KEY (club_id) REFERENCES clubs(id) ON DELETE CASCADE,

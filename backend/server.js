@@ -33,6 +33,8 @@ const clubRoutes = require('./routes/clubRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const hackathonRoutes = require('./routes/hackathonRoutes');
+const userRoutes = require('./routes/userRoutes');
+const facultyRoutes = require('./routes/facultyRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
@@ -43,6 +45,8 @@ app.use('/api/clubs', clubRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/hackathons', hackathonRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/faculty', facultyRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

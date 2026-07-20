@@ -49,6 +49,23 @@ export function ManageMembers() {
     }
   };
 
+  const handleApprove = async (student_id: number) => {
+    try {
+      const token = localStorage.getItem('campus_token');
+      const response = await fetch(`http://localhost:5000/api/clubs/members/${student_id}/approve`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setMembers(members.map(m => m.student_id === student_id ? { ...m, club_admin_approved: 1 } : m));
+      } else {
+        alert('Failed to approve member');
+      }
+    } catch (error) {
+      console.error('Error approving member:', error);
+    }
+  };
+
   const filteredMembers = members.filter(m => 
     m.email.toLowerCase().includes(search.toLowerCase()) || 
     m.first_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -94,6 +111,7 @@ export function ManageMembers() {
                 <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Member</th>
                 <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Email</th>
                 <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Joined Date</th>
+                <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
                 <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Role</th>
                 <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 text-right">Actions</th>
               </tr>
@@ -116,6 +134,15 @@ export function ManageMembers() {
                     {m.joined_at ? new Date(m.joined_at).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="py-3 px-4">
+                    {m.club_admin_approved === 0 ? (
+                      <span className="bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded-full text-xs font-bold">Pending</span>
+                    ) : m.sys_admin_approved === 0 ? (
+                      <span className="bg-orange-500/10 text-orange-500 px-2 py-1 rounded-full text-xs font-bold">Pending System Admin</span>
+                    ) : (
+                      <span className="bg-green-500/10 text-green-500 px-2 py-1 rounded-full text-xs font-bold">Active</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
                     {editingMember === m.student_id && m.role !== 'Club Leader' ? (
                       <select 
                         className="bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded px-2 py-1 text-sm text-gray-900 dark:text-white"
@@ -133,15 +160,25 @@ export function ManageMembers() {
                     )}
                   </td>
                   <td className="py-3 px-4 text-right">
-                    {m.role !== 'Club Leader' && (
-                      <button 
-                        onClick={() => setEditingMember(m.student_id)}
-                        className="p-2 text-gray-400 hover:text-brand-primary transition-colors"
-                        title="Edit Role"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {m.club_admin_approved === 0 && (
+                        <button 
+                          onClick={() => handleApprove(m.student_id)}
+                          className="px-3 py-1 bg-green-500 text-white rounded-lg text-xs font-medium hover:bg-green-600 transition-colors"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {m.role !== 'Club Leader' && (
+                        <button 
+                          onClick={() => setEditingMember(m.student_id)}
+                          className="p-2 text-gray-400 hover:text-brand-primary transition-colors"
+                          title="Edit Role"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

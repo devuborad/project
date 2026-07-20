@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Clock, BookOpen, AlertCircle, TrendingUp, Sparkles, ChevronRight, Briefcase, FileText } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
@@ -6,21 +6,53 @@ import { Button } from '../../components/ui/Button';
 import { FacultyOverview } from './FacultyOverview';
 
 export function DashboardOverview() {
-  const [user] = useState<any>(() => {
+  const [user, setUser] = useState<any>(null);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     const userStr = localStorage.getItem('campus_user');
     if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch (e) {
-        return null;
-      }
+      try { setUser(JSON.parse(userStr)); } catch (e) {}
     }
-    return null;
-  });
+
+    const fetchOverview = async () => {
+      try {
+        const token = localStorage.getItem('campus_token');
+        const response = await fetch('http://localhost:5000/api/students/overview', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          setData(resData);
+        }
+      } catch (error) {
+        console.error('Error fetching overview:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Only fetch if student
+    if (userStr && JSON.parse(userStr).role !== 'faculty') {
+      fetchOverview();
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   if (user?.role === 'faculty') {
     return <FacultyOverview />;
   }
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading your dashboard...</div>;
+  }
+
+  const attendance = data?.attendance || 0;
+  const tasksDone = data?.tasksDone || 0;
+  const totalTasks = data?.totalTasks || 0;
+  const upcomingSchedule = data?.upcomingSchedule || [];
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -39,13 +71,13 @@ export function DashboardOverview() {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2">Good morning, {user?.first_name || 'Student'}!</h1>
             <p className="text-white/80 max-w-xl">
-              You have 2 assignments due today and a Computer Networks lecture in 45 minutes. I've prepared a quick review of your previous notes.
+              You have {totalTasks - tasksDone} assignments pending. {upcomingSchedule.length > 0 ? `Your next class is ${upcomingSchedule[0]?.title}.` : 'No upcoming classes today.'}
             </p>
           </div>
           <div className="shrink-0">
             <Button variant="glass" className="bg-white/20 border-white/30 text-gray-900 dark:text-white hover:bg-white/30">
               <Bot className="w-5 h-5 mr-2" />
-              Start Review Session
+              Start Copilot
             </Button>
           </div>
         </div>
@@ -62,29 +94,32 @@ export function DashboardOverview() {
             <GlassCard className="p-4 flex flex-col gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Attendance</span>
               <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">85%</span>
-                <span className="text-xs text-green-400 mb-1 flex items-center"><TrendingUp className="w-3 h-3 mr-1" />+2%</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{attendance}%</span>
+                {attendance >= 75 ? (
+                  <span className="text-xs text-green-400 mb-1 flex items-center"><TrendingUp className="w-3 h-3 mr-1" />Good</span>
+                ) : (
+                  <span className="text-xs text-red-400 mb-1 flex items-center"><AlertCircle className="w-3 h-3 mr-1" />Low</span>
+                )}
               </div>
             </GlassCard>
             <GlassCard className="p-4 flex flex-col gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">CGPA</span>
               <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">8.9</span>
-                <span className="text-xs text-brand-primary mb-1 flex items-center">Top 10%</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{data?.cgpa || 'N/A'}</span>
               </div>
             </GlassCard>
             <GlassCard className="p-4 flex flex-col gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Study Hours</span>
               <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">24h</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{data?.studyHours || 0}h</span>
                 <span className="text-xs text-gray-500 mb-1">this week</span>
               </div>
             </GlassCard>
             <GlassCard className="p-4 flex flex-col gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Tasks Done</span>
               <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">12</span>
-                <span className="text-xs text-gray-500 mb-1">/ 15</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{tasksDone}</span>
+                <span className="text-xs text-gray-500 mb-1">/ {totalTasks}</span>
               </div>
             </GlassCard>
           </div>
@@ -92,29 +127,27 @@ export function DashboardOverview() {
           {/* Upcoming Schedule */}
           <GlassCard className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Today's Schedule</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Upcoming Schedule</h2>
               <button className="text-sm text-brand-primary hover:text-brand-secondary transition-colors flex items-center">
-                View Calendar <ChevronRight className="w-4 h-4 ml-1" />
+                View All <ChevronRight className="w-4 h-4 ml-1" />
               </button>
             </div>
             
             <div className="flex flex-col gap-4">
-              {[
-                { time: '09:00 AM', title: 'Computer Networks', type: 'Lecture', color: 'bg-blue-500/20 text-blue-400 border-blue-500/20' },
-                { time: '11:30 AM', title: 'Data Structures Lab', type: 'Lab', color: 'bg-purple-500/20 text-purple-400 border-purple-500/20' },
-                { time: '02:00 PM', title: 'AI Study Group', type: 'Meeting', color: 'bg-brand-primary/20 text-brand-primary border-brand-primary/20' },
-              ].map((item, i) => (
+              {upcomingSchedule.length > 0 ? upcomingSchedule.map((item: any, i: number) => (
                 <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white/[0.04] transition-colors group cursor-pointer">
                   <div className="w-20 shrink-0 text-sm font-medium text-gray-600 dark:text-gray-400 mt-0.5">{item.time}</div>
                   <div className="w-2 h-2 rounded-full bg-gray-600 mt-2 shrink-0 group-hover:bg-brand-primary transition-colors" />
                   <div className="flex-1">
                     <h4 className="text-gray-900 dark:text-white font-medium mb-1 group-hover:text-brand-primary transition-colors">{item.title}</h4>
-                    <span className={`text-xs px-2 py-1 rounded-md border ${item.color}`}>
-                      {item.type}
+                    <span className="text-xs px-2 py-1 rounded-md border bg-blue-500/20 text-blue-400 border-blue-500/20">
+                      {item.course}
                     </span>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-gray-500 text-sm">No upcoming classes.</p>
+              )}
             </div>
           </GlassCard>
 
@@ -132,32 +165,24 @@ export function DashboardOverview() {
             </div>
             
             <div className="flex flex-col gap-3 relative z-10">
-              <div className="p-4 rounded-2xl bg-brand-primary/10 border border-brand-primary/20 cursor-pointer hover:bg-brand-primary/20 transition-colors">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-brand-primary shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-gray-900 dark:text-white text-sm font-medium mb-1">DBMS Assignment Due</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Due tonight at 11:59 PM. You are 70% complete. Want me to review your SQL queries?</p>
+              {totalTasks - tasksDone > 0 && (
+                <div className="p-4 rounded-2xl bg-brand-primary/10 border border-brand-primary/20 cursor-pointer hover:bg-brand-primary/20 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-brand-primary shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-gray-900 dark:text-white text-sm font-medium mb-1">Assignments Pending</h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">You have {totalTasks - tasksDone} assignments left to submit.</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
               
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-gray-200 dark:border-white/10 cursor-pointer hover:bg-white/[0.06] transition-colors">
-                <div className="flex items-start gap-3">
-                  <Briefcase className="w-5 h-5 text-gray-600 dark:text-gray-400 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-gray-900 dark:text-white text-sm font-medium mb-1">New Internship Match</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Google just posted a SWE Intern role matching your React skills. Apply before Friday.</p>
-                  </div>
-                </div>
-              </div>
-
               <div className="p-4 rounded-2xl bg-white/[0.03] border border-gray-200 dark:border-white/10 cursor-pointer hover:bg-white/[0.06] transition-colors">
                 <div className="flex items-start gap-3">
                   <BookOpen className="w-5 h-5 text-gray-600 dark:text-gray-400 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-gray-900 dark:text-white text-sm font-medium mb-1">Notes Summarized</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">I've created a mind map for yesterday's OS lecture.</p>
+                    <h4 className="text-gray-900 dark:text-white text-sm font-medium mb-1">Study Materials</h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Review your past notes in the Learning Hub.</p>
                   </div>
                 </div>
               </div>
@@ -170,11 +195,11 @@ export function DashboardOverview() {
             <div className="grid grid-cols-2 gap-3">
               <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white/[0.05] hover:border-gray-200 dark:border-white/10 transition-all group text-gray-600 dark:text-gray-400 hover:text-brand-primary">
                 <FileText className="w-6 h-6" />
-                <span className="text-xs font-medium text-center">Scan Notes</span>
+                <span className="text-xs font-medium text-center">Learning Hub</span>
               </button>
               <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white/[0.05] hover:border-gray-200 dark:border-white/10 transition-all group text-gray-600 dark:text-gray-400 hover:text-brand-primary">
-                <Clock className="w-6 h-6" />
-                <span className="text-xs font-medium text-center">Log Hours</span>
+                <Briefcase className="w-6 h-6" />
+                <span className="text-xs font-medium text-center">Opportunity Hub</span>
               </button>
             </div>
           </GlassCard>

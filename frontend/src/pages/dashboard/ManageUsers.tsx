@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Search, Edit2, Trash2, Shield, User, GraduationCap, Building, Plus, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { EditUserModal } from '../../components/admin/EditUserModal';
+import { AdminClubRequests } from '../../components/admin/AdminClubRequests';
 
 export function ManageUsers() {
+  const [activeTab, setActiveTab] = useState<'users' | 'clubs'>('users');
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState<any>(null);
   const [editingStatus, setEditingStatus] = useState<any>(null);
+  const [editProfileUser, setEditProfileUser] = useState<any>(null);
   
   // Add User Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -141,14 +145,36 @@ export function ManageUsers() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Manage Users</h1>
-          <p className="text-gray-600 dark:text-gray-400">View and manage all accounts on the platform.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">System Admin</h1>
+          <p className="text-gray-600 dark:text-gray-400">View and manage all accounts and approvals.</p>
         </div>
-        <Button variant="gradient" onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add User
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl">
+            <button 
+              onClick={() => setActiveTab('users')} 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'users' ? 'bg-white dark:bg-brand-primary text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+            >
+              Manage Users
+            </button>
+            <button 
+              onClick={() => setActiveTab('clubs')} 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'clubs' ? 'bg-white dark:bg-brand-primary text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+            >
+              Club Requests
+            </button>
+          </div>
+          {activeTab === 'users' && (
+            <Button variant="gradient" onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Add User
+            </Button>
+          )}
+        </div>
       </div>
 
+      {activeTab === 'clubs' ? (
+        <AdminClubRequests />
+      ) : (
+      <>
       <GlassCard className="p-6">
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -244,6 +270,13 @@ export function ManageUsers() {
                         <Shield className="w-4 h-4" />
                       </button>
                       <button 
+                        onClick={() => setEditProfileUser(u)}
+                        className="p-2 text-gray-400 hover:text-brand-primary transition-colors"
+                        title="Edit Full Profile"
+                      >
+                        <User className="w-4 h-4" />
+                      </button>
+                      <button 
                         onClick={() => setEditingUser(u.id)}
                         className="p-2 text-gray-400 hover:text-brand-primary transition-colors"
                         title="Edit Role"
@@ -268,7 +301,7 @@ export function ManageUsers() {
 
       {/* Add User Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <GlassCard className="w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add New User</h2>
@@ -323,6 +356,20 @@ export function ManageUsers() {
             </form>
           </GlassCard>
         </div>
+      )}
+
+      {editProfileUser && (
+        <EditUserModal 
+          user={editProfileUser} 
+          onClose={() => setEditProfileUser(null)} 
+          onSave={() => {
+            fetchUsers();
+          }} 
+        />
+      )}
+      
+      {/* End users view */}
+      </>
       )}
     </div>
   );

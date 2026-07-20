@@ -12,44 +12,10 @@ async function run() {
     multipleStatements: true
   });
 
-  const sql = `
--- 15. Assignments
-CREATE TABLE IF NOT EXISTS assignments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  faculty_id INT NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  due_date DATETIME NOT NULL,
-  course VARCHAR(150),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (faculty_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- 16. Assignment Submissions
-CREATE TABLE IF NOT EXISTS assignment_submissions (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  assignment_id INT NOT NULL,
-  student_id INT NOT NULL,
-  file_url VARCHAR(500) NOT NULL,
-  grade VARCHAR(50),
-  feedback TEXT,
-  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
-  FOREIGN KEY (student_id) REFERENCES student_profiles(id) ON DELETE CASCADE
-);
-
--- 17. Attendance
-CREATE TABLE IF NOT EXISTS attendance (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  faculty_id INT NOT NULL,
-  student_id INT NOT NULL,
-  course VARCHAR(150) NOT NULL,
-  date DATE NOT NULL,
-  status ENUM('Present', 'Absent', 'Late') DEFAULT 'Present',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (faculty_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (student_id) REFERENCES student_profiles(id) ON DELETE CASCADE
-);
+const sql = `
+  ALTER TABLE club_members 
+  ADD COLUMN sys_admin_approved BOOLEAN DEFAULT TRUE,
+  ADD COLUMN club_admin_approved BOOLEAN DEFAULT TRUE;
   `;
 
   console.log('Applying schema...');

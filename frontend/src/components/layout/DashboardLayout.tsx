@@ -50,7 +50,6 @@ const adminLinks = [
   { icon: <Sparkles className="w-5 h-5" />, label: 'Home', path: '/' },
   { icon: <LayoutDashboard className="w-5 h-5" />, label: 'System Admin', path: '/dashboard' },
   { icon: <Users className="w-5 h-5" />, label: 'Manage Users', path: '/dashboard/users' },
-  { icon: <Settings className="w-5 h-5" />, label: 'Settings', path: '/dashboard/settings' },
 ];
 
 export function DashboardLayout() {
@@ -165,13 +164,7 @@ export function DashboardLayout() {
             <Menu className="w-5 h-5" />
             {sidebarOpen && <span className="font-medium whitespace-nowrap">Collapse</span>}
           </button>
-          <Link
-            to="/settings"
-            className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-white/5 transition-colors"
-          >
-            <Settings className="w-5 h-5" />
-            {sidebarOpen && <span className="font-medium whitespace-nowrap">Settings</span>}
-          </Link>
+
           <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-colors w-full text-left">
             <LogOut className="w-5 h-5" />
             {sidebarOpen && <span className="font-medium whitespace-nowrap">Sign Out</span>}
@@ -230,7 +223,7 @@ export function DashboardLayout() {
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+      <main className="flex-1 flex flex-col h-[100dvh] overflow-hidden relative">
         {/* Top Navbar */}
         <header className="h-20 border-b border-gray-100 dark:border-white/5 hidden md:flex items-center justify-between px-8 bg-transparent backdrop-blur-md z-10 shrink-0">
           <div className="relative w-96 group">
@@ -265,7 +258,7 @@ export function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 scroll-smooth relative z-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 scroll-smooth relative">
           <Outlet />
         </div>
       </main>

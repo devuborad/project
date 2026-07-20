@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, GraduationCap, Briefcase, BookOpen, TrendingUp, Edit2, Save, X, ExternalLink } from 'lucide-react';
+import { User, Mail, GraduationCap, Briefcase, BookOpen, TrendingUp, Edit2, Save, X, ExternalLink, Camera } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Button } from '../../components/ui/Button';
 
@@ -15,7 +15,11 @@ export function Profile() {
     graduation_year: '',
     bio: '',
     github_url: '',
-    linkedin_url: ''
+    linkedin_url: '',
+    prn_number: '',
+    department: '',
+    title: '',
+    office_location: ''
   });
 
   useEffect(() => {
@@ -25,7 +29,7 @@ export function Profile() {
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('campus_token');
-      const response = await fetch('http://localhost:5000/api/students/me', {
+      const response = await fetch('http://localhost:5000/api/users/me', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -40,7 +44,11 @@ export function Profile() {
           graduation_year: data.graduation_year || '',
           bio: data.bio || '',
           github_url: data.github_url || '',
-          linkedin_url: data.linkedin_url || ''
+          linkedin_url: data.linkedin_url || '',
+          prn_number: data.prn_number || '',
+          department: data.department || '',
+          title: data.title || '',
+          office_location: data.office_location || ''
         });
         
         // Also update local storage if names changed
@@ -67,7 +75,7 @@ export function Profile() {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('campus_token');
-      const response = await fetch('http://localhost:5000/api/students/profile', {
+      const response = await fetch('http://localhost:5000/api/users/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -87,6 +95,33 @@ export function Profile() {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      try {
+        const token = localStorage.getItem('campus_token');
+        const response = await fetch('http://localhost:5000/api/users/avatar', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+        if (response.ok) {
+          fetchProfile(); // Refresh to get new avatar URL
+        } else {
+          alert('Failed to upload image');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error uploading image');
+      }
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-gray-400">Loading profile...</div>;
   }
@@ -101,9 +136,16 @@ export function Profile() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-primary/10 blur-[80px] rounded-full pointer-events-none transform translate-x-1/2 -translate-y-1/2" />
         
         <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-purple-500 to-brand-primary p-1 shrink-0">
-            <div className="w-full h-full rounded-full border-4 border-brand-dark overflow-hidden">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-purple-500 to-brand-primary p-1 shrink-0 relative group">
+            <div className="w-full h-full rounded-full border-4 border-brand-dark overflow-hidden relative">
               <img src={user.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user.first_name}`} alt="Profile" className="w-full h-full object-cover bg-white" />
+              
+              {/* Avatar Upload Overlay */}
+              <label className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <Camera className="w-6 h-6 mb-1" />
+                <span className="text-xs font-medium">Change</span>
+                <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
+              </label>
             </div>
           </div>
           
@@ -115,10 +157,15 @@ export function Profile() {
             
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-1"><Mail className="w-4 h-4" /> {user.email}</div>
-              {(!isEditing) && (
+              {(!isEditing && user.role === 'student') && (
                 <>
                   <div className="flex items-center gap-1"><GraduationCap className="w-4 h-4" /> {user.graduation_year ? `Class of ${user.graduation_year}` : 'N/A'}</div>
                   <div className="flex items-center gap-1"><Briefcase className="w-4 h-4" /> {user.major || 'No major specified'}</div>
+                </>
+              )}
+              {(!isEditing && user.role === 'faculty') && (
+                <>
+                  <div className="flex items-center gap-1"><Briefcase className="w-4 h-4" /> {user.department || 'No department specified'}</div>
                 </>
               )}
             </div>
@@ -170,28 +217,85 @@ export function Profile() {
                   />
                 </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-400">Major</label>
-                <input 
-                  type="text" 
-                  value={formData.major} 
-                  onChange={e => setFormData({...formData, major: e.target.value})} 
-                  placeholder="Computer Science"
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-400">Graduation Year</label>
-                <input 
-                  type="number" 
-                  value={formData.graduation_year} 
-                  onChange={e => setFormData({...formData, graduation_year: e.target.value})} 
-                  placeholder="2025"
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-400">Bio</label>
+              
+              {user.role === 'student' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-400">Major</label>
+                      <input 
+                        type="text" 
+                        value={formData.major} 
+                        onChange={e => setFormData({...formData, major: e.target.value})} 
+                        placeholder="Computer Science"
+                        className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-400">Graduation Year</label>
+                      <input 
+                        type="number" 
+                        value={formData.graduation_year} 
+                        onChange={e => setFormData({...formData, graduation_year: e.target.value})} 
+                        placeholder="2025"
+                        className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-400">PRN Number</label>
+                    <input 
+                      type="text" 
+                      value={formData.prn_number} 
+                      onChange={e => setFormData({...formData, prn_number: e.target.value})} 
+                      placeholder="e.g. 123456789"
+                      className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                </>
+              )}
+
+              {user.role === 'faculty' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-400">Department</label>
+                      <input 
+                        type="text" 
+                        value={formData.department} 
+                        onChange={e => setFormData({...formData, department: e.target.value})} 
+                        placeholder="Computer Science"
+                        className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-400">Title</label>
+                      <input 
+                        type="text" 
+                        value={formData.title} 
+                        onChange={e => setFormData({...formData, title: e.target.value})} 
+                        placeholder="Professor"
+                        className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-400">Office Location</label>
+                    <input 
+                      type="text" 
+                      value={formData.office_location} 
+                      onChange={e => setFormData({...formData, office_location: e.target.value})} 
+                      placeholder="Room 101"
+                      className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                </>
+              )}
+
+              {user.role === 'student' && (
+                <>
+                  <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-400">Bio</label>
                 <textarea 
                   value={formData.bio} 
                   onChange={e => setFormData({...formData, bio: e.target.value})} 
@@ -199,26 +303,28 @@ export function Profile() {
                   className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary min-h-[100px]"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-400">GitHub URL</label>
-                <input 
-                  type="url" 
-                  value={formData.github_url} 
-                  onChange={e => setFormData({...formData, github_url: e.target.value})} 
-                  placeholder="https://github.com/yourusername"
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-400">LinkedIn URL</label>
-                <input 
-                  type="url" 
-                  value={formData.linkedin_url} 
-                  onChange={e => setFormData({...formData, linkedin_url: e.target.value})} 
-                  placeholder="https://linkedin.com/in/yourusername"
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
-                />
-              </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-400">GitHub URL</label>
+                    <input 
+                      type="url" 
+                      value={formData.github_url} 
+                      onChange={e => setFormData({...formData, github_url: e.target.value})} 
+                      placeholder="https://github.com/yourusername"
+                      className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-400">LinkedIn URL</label>
+                    <input 
+                      type="url" 
+                      value={formData.linkedin_url} 
+                      onChange={e => setFormData({...formData, linkedin_url: e.target.value})} 
+                      placeholder="https://linkedin.com/in/yourusername"
+                      className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <>
