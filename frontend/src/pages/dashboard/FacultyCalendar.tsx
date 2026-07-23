@@ -7,11 +7,28 @@ export function FacultyCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date()); 
   const [lectures, setLectures] = useState<any[]>([]);
 
+  const [user, setUser] = useState<any>(null);
+
   useEffect(() => {
-    const fetchLectures = async () => {
+    const userStr = localStorage.getItem('campus_user');
+    if (userStr) {
+      try {
+        setUser(JSON.parse(userStr));
+      } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
       try {
         const token = localStorage.getItem('campus_token');
-        const response = await fetch('http://localhost:5000/api/faculty/lectures', {
+        if (!user) return;
+
+        const endpoint = user.role === 'faculty' 
+          ? 'http://localhost:5000/api/faculty/lectures' 
+          : 'http://localhost:5000/api/students/calendar';
+
+        const response = await fetch(endpoint, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -19,11 +36,13 @@ export function FacultyCalendar() {
           setLectures(data);
         }
       } catch (error) {
-        console.error('Error fetching lectures:', error);
+        console.error('Error fetching calendar events:', error);
       }
     };
-    fetchLectures();
-  }, []);
+    if (user) {
+      fetchEvents();
+    }
+  }, [user]);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
@@ -61,7 +80,7 @@ export function FacultyCalendar() {
         title: lecture.title,
         time: lecture.time,
         course: lecture.course,
-        type: 'lecture',
+        type: lecture.type || 'lecture', // Use type if provided (e.g., student assignments)
         link: lecture.meeting_link
       });
     }
@@ -119,8 +138,12 @@ export function FacultyCalendar() {
                     
                     <div className="space-y-1 mt-1">
                       {eventsByDay[day]?.map((event) => (
-                        <div key={event.id} className="px-2 py-1 text-xs rounded truncate bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300" title={`${event.course}: ${event.title}`}>
-                          {event.time} - {event.course}
+                        <div key={event.id} className={`px-2 py-1 text-xs rounded truncate ${
+                          event.type === 'assignment' 
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300' 
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
+                        }`} title={`${event.course}: ${event.title}`}>
+                          {event.time} - {event.course} {event.type === 'assignment' && '(Due)'}
                         </div>
                       ))}
                     </div>
@@ -137,7 +160,11 @@ export function FacultyCalendar() {
             <div className="space-y-4">
               {upcomingEvents.map((item, idx) => (
                 <div key={idx} className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-500 flex flex-col items-center justify-center shrink-0">
+                  <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 ${
+                    item.type === 'assignment'
+                      ? 'bg-purple-500/20 text-purple-500'
+                      : 'bg-blue-500/20 text-blue-500'
+                  }`}>
                     <span className="text-xs font-bold leading-tight">{new Date(item.date).toLocaleString('default', { month: 'short' }).toUpperCase()}</span>
                     <span className="text-sm font-bold leading-tight">{new Date(item.date).getDate()}</span>
                   </div>
@@ -151,7 +178,7 @@ export function FacultyCalendar() {
                 </div>
               ))}
               {upcomingEvents.length === 0 && (
-                <p className="text-sm text-gray-500">No upcoming lectures scheduled.</p>
+                <p className="text-sm text-gray-500">No upcoming events scheduled.</p>
               )}
             </div>
           </GlassCard>
@@ -161,6 +188,9 @@ export function FacultyCalendar() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <div className="w-3 h-3 rounded-full bg-blue-500"></div> Scheduled Lectures
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div> Assignments Due
               </div>
             </div>
           </GlassCard>

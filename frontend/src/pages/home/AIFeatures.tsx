@@ -80,7 +80,7 @@ export function AIFeatures() {
               >
                 <GlassCard className="p-6 h-full border-t border-gray-200 dark:border-white/10 bg-gradient-to-br from-white/[0.05] to-transparent hover:from-white/[0.08]">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-brand-dark flex items-center justify-center border border-gray-200 dark:border-white/10">
+                    <div className="w-10 h-10 rounded-full bg-white dark:bg-brand-dark flex items-center justify-center border border-gray-200 dark:border-white/10 transition-colors">
                       {feature.icon}
                     </div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">{feature.title}</h3>

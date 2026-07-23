@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
-const aiRoutes = require('./routes/aiRoutes');
+const aiRoutes = require('./routes/ai.routes');
 const studentRoutes = require('./routes/studentRoutes');
 const noteRoutes = require('./routes/noteRoutes');
 const internshipRoutes = require('./routes/internshipRoutes');
@@ -35,6 +35,11 @@ const eventRoutes = require('./routes/eventRoutes');
 const hackathonRoutes = require('./routes/hackathonRoutes');
 const userRoutes = require('./routes/userRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
+const resumeRoutes = require('./routes/resume.routes');
+const roadmapRoutes = require('./routes/roadmap.routes');
+const careerRoutes = require('./routes/career.routes');
+const searchRoutes = require('./routes/search.routes');
+const recommendationRoutes = require('./routes/recommendation.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
@@ -47,6 +52,11 @@ app.use('/api/events', eventRoutes);
 app.use('/api/hackathons', hackathonRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/faculty', facultyRoutes);
+app.use('/api/resume', resumeRoutes);
+app.use('/api/roadmap', roadmapRoutes);
+app.use('/api/career', careerRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

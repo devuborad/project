@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const facultyController = require('../controllers/facultyController');
 const { verifyToken, authorizeRole } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 router.use(verifyToken);
 router.use(authorizeRole('faculty'));
@@ -28,5 +29,10 @@ router.get('/overview', facultyController.getOverview);
 router.get('/assignments', facultyController.getAssignments);
 router.post('/assignments', facultyController.createAssignment);
 router.delete('/assignments/:id', facultyController.deleteAssignment);
+
+// Notes
+router.get('/notes', facultyController.getNotes);
+router.post('/notes', upload.single('file'), facultyController.uploadNote);
+router.delete('/notes/:id', facultyController.deleteNote);
 
 module.exports = router;

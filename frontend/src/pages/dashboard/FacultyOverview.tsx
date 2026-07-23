@@ -86,7 +86,7 @@ export function FacultyOverview() {
               <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-gray-100 dark:border-white/5">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-primary to-purple-500 p-[2px]">
-                    <div className="w-full h-full bg-brand-dark rounded-full overflow-hidden">
+                    <div className="w-full h-full bg-gray-100 dark:bg-brand-dark rounded-full overflow-hidden transition-colors">
                       <img src={sub.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${sub.first_name}`} alt="Avatar" />
                     </div>
                   </div>

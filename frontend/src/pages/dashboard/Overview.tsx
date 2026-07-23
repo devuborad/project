@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Bot, Clock, BookOpen, AlertCircle, TrendingUp, Sparkles, ChevronRight, Briefcase, FileText } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bot, Clock, BookOpen, AlertCircle, TrendingUp, Sparkles, ChevronRight, Briefcase, FileText, X, CheckCircle2 } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Button } from '../../components/ui/Button';
 import { FacultyOverview } from './FacultyOverview';
@@ -9,6 +9,11 @@ export function DashboardOverview() {
   const [user, setUser] = useState<any>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Modal states
+  const [activeModal, setActiveModal] = useState<'attendance' | 'cgpa' | 'tasks' | null>(null);
+  const [modalData, setModalData] = useState<any[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem('campus_user');
@@ -41,6 +46,31 @@ export function DashboardOverview() {
     }
   }, []);
 
+  const openModal = async (type: 'attendance' | 'cgpa' | 'tasks') => {
+    setActiveModal(type);
+    setModalLoading(true);
+    setModalData([]);
+    try {
+      const token = localStorage.getItem('campus_token');
+      let endpoint = '';
+      if (type === 'attendance') endpoint = '/attendance-details';
+      else if (type === 'cgpa') endpoint = '/grades';
+      else if (type === 'tasks') endpoint = '/completed-tasks';
+
+      const response = await fetch(`http://localhost:5000/api/students${endpoint}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const resData = await response.json();
+        setModalData(resData);
+      }
+    } catch (error) {
+      console.error(`Error fetching ${type} details:`, error);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
   if (user?.role === 'faculty') {
     return <FacultyOverview />;
   }
@@ -55,7 +85,7 @@ export function DashboardOverview() {
   const upcomingSchedule = data?.upcomingSchedule || [];
 
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto relative">
       {/* Welcome Banner */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -91,7 +121,7 @@ export function DashboardOverview() {
           
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <GlassCard className="p-4 flex flex-col gap-2">
+            <GlassCard className="p-4 flex flex-col gap-2 cursor-pointer hover:border-brand-primary/50 transition-colors" onClick={() => openModal('attendance')}>
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Attendance</span>
               <div className="flex items-end gap-2">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">{attendance}%</span>
@@ -102,20 +132,20 @@ export function DashboardOverview() {
                 )}
               </div>
             </GlassCard>
-            <GlassCard className="p-4 flex flex-col gap-2">
+            <GlassCard className="p-4 flex flex-col gap-2 cursor-pointer hover:border-brand-primary/50 transition-colors" onClick={() => openModal('cgpa')}>
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">CGPA</span>
               <div className="flex items-end gap-2">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">{data?.cgpa || 'N/A'}</span>
               </div>
             </GlassCard>
-            <GlassCard className="p-4 flex flex-col gap-2">
+            <GlassCard className="p-4 flex flex-col gap-2 cursor-default">
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Study Hours</span>
               <div className="flex items-end gap-2">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">{data?.studyHours || 0}h</span>
                 <span className="text-xs text-gray-500 mb-1">this week</span>
               </div>
             </GlassCard>
-            <GlassCard className="p-4 flex flex-col gap-2">
+            <GlassCard className="p-4 flex flex-col gap-2 cursor-pointer hover:border-brand-primary/50 transition-colors" onClick={() => openModal('tasks')}>
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Tasks Done</span>
               <div className="flex items-end gap-2">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">{tasksDone}</span>
@@ -206,6 +236,84 @@ export function DashboardOverview() {
 
         </div>
       </div>
+
+      {/* Detail Modals */}
+      <AnimatePresence>
+        {activeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setActiveModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-brand-dark border border-gray-200 dark:border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[80vh]"
+            >
+              <div className="p-4 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/[0.02]">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white capitalize">
+                  {activeModal === 'attendance' && 'Detailed Attendance'}
+                  {activeModal === 'cgpa' && 'Academic Results'}
+                  {activeModal === 'tasks' && 'Completed Assignments'}
+                </h3>
+                <button onClick={() => setActiveModal(null)} className="text-gray-500 hover:text-red-500 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-3">
+                {modalLoading ? (
+                  <div className="text-center text-gray-500 py-8">Loading...</div>
+                ) : modalData.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">No records found.</div>
+                ) : (
+                  modalData.map((item, i) => (
+                    <div key={i} className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.02] flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{item.title}</h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          Course: <span className="text-brand-primary">{item.course}</span>
+                        </p>
+                      </div>
+                      
+                      {activeModal === 'attendance' && (
+                        <div className="text-right">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${item.status === 'Present' ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'}`}>
+                            {item.status}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-2">{new Date(item.date).toLocaleDateString()} at {item.time}</p>
+                        </div>
+                      )}
+
+                      {activeModal === 'cgpa' && (
+                        <div className="text-right flex flex-col items-end">
+                          <span className="text-xl font-bold text-gray-900 dark:text-white">{item.grade}</span>
+                          <span className="text-xs text-gray-500">Grade</span>
+                        </div>
+                      )}
+
+                      {activeModal === 'tasks' && (
+                        <div className="text-right">
+                          <span className="text-xs text-green-600 dark:text-green-400 flex items-center justify-end gap-1 mb-1">
+                            <CheckCircle2 className="w-3 h-3" /> Submitted
+                          </span>
+                          <p className="text-xs text-gray-500">on {new Date(item.submitted_at).toLocaleDateString()}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+

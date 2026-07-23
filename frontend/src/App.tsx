@@ -14,7 +14,11 @@ import { ClubAdminOverview } from './pages/dashboard/ClubAdminOverview';
 import { AdminOverview } from './pages/dashboard/AdminOverview';
 import { LearningHub } from './pages/dashboard/LearningHub';
 import { OpportunityHub } from './pages/dashboard/OpportunityHub';
-import { ResumeStudio } from './pages/dashboard/ResumeStudio';
+import { ResumeAnalyzer } from './pages/dashboard/ResumeAnalyzer';
+import { RoadmapGenerator } from './pages/dashboard/RoadmapGenerator';
+import { NotesSummarizer } from './pages/dashboard/NotesSummarizer';
+import { CareerCoach } from './pages/dashboard/CareerCoach';
+import { AIAnalytics } from './pages/dashboard/AIAnalytics';
 import { Profile } from './pages/dashboard/Profile';
 
 import { ManageEvents } from './pages/dashboard/ManageEvents';
@@ -26,6 +30,8 @@ import { ManageStudents } from './pages/dashboard/ManageStudents';
 import { ManageLectures } from './pages/dashboard/ManageLectures';
 import { FacultyCalendar } from './pages/dashboard/FacultyCalendar';
 import { ManageUsers } from './pages/dashboard/ManageUsers';
+import { ManageNotes } from './pages/dashboard/ManageNotes';
+import { StudentAssignments } from './pages/dashboard/StudentAssignments';
 
 const RoleBasedDashboard = () => {
   const userStr = localStorage.getItem('campus_user');
@@ -58,9 +64,14 @@ function App() {
           <Route index element={<RoleBasedDashboard />} />
           <Route path="learning" element={<LearningHub />} />
           <Route path="opportunities" element={<OpportunityHub />} />
-          <Route path="resume" element={<ResumeStudio />} />
+          <Route path="resume" element={<ResumeAnalyzer />} />
+          <Route path="roadmap" element={<RoadmapGenerator />} />
+          <Route path="notes-summarizer" element={<NotesSummarizer />} />
+          <Route path="career-coach" element={<CareerCoach />} />
+          <Route path="ai-analytics" element={<AIAnalytics />} />
           <Route path="profile" element={<Profile />} />
           <Route path="calendar" element={<FacultyCalendar />} />
+          <Route path="student-assignments" element={<StudentAssignments />} />
           
           {/* Faculty Routes */}
           <Route element={<FacultyRoute />}>
@@ -68,6 +79,7 @@ function App() {
             <Route path="lectures" element={<ManageLectures />} />
             <Route path="assignments" element={<ManageAssignments />} />
             <Route path="attendance" element={<ManageAttendance />} />
+            <Route path="notes" element={<ManageNotes />} />
           </Route>
 
           {/* Club Admin Routes */}

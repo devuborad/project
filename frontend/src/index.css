@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
+@plugin "@tailwindcss/typography";
 
 @layer base {
   :root {
@@ -7,6 +8,11 @@
     --foreground: #ffffff;
     --card: rgba(255, 255, 255, 0.06);
     --border: rgba(255, 255, 255, 0.1);
+    --grid-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .dark {
+    --grid-color: rgba(255, 255, 255, 0.02);
   }
 
   body {
@@ -62,8 +68,8 @@
   height: 100vh;
   z-index: -1;
   background-size: 50px 50px;
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-image: linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
   mask-image: radial-gradient(circle at center, black, transparent 80%);
   pointer-events: none;
 }

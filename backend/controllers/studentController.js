@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const cloudinary = require('../config/cloudinary');
 
 // Get all students
 const getStudents = async (req, res, next) => {
@@ -162,7 +163,6 @@ const getResume = async (req, res, next) => {
 };
 
 // Upload Resume
-const cloudinary = require('../config/cloudinary');
 const uploadResume = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -198,6 +198,143 @@ const uploadResume = async (req, res, next) => {
   }
 };
 
+// Get Attendance Details
+const getAttendanceDetails = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const [[studentProfile]] = await db.execute('SELECT id FROM student_profiles WHERE user_id = ?', [userId]);
+    if (!studentProfile) return res.status(404).json({ error: 'Student profile not found' });
+    
+    const [attendance] = await db.execute(`
+      SELECT l.title, l.course, l.date, l.time, a.status 
+      FROM attendance a
+      JOIN lectures l ON a.lecture_id = l.id
+      WHERE a.student_id = ?
+      ORDER BY l.date DESC, l.time DESC
+    `, [studentProfile.id]);
+    
+    res.json(attendance);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get Completed Tasks
+const getCompletedTasks = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    
+    const [tasks] = await db.execute(`
+      SELECT a.title, a.course, a.due_date, s.submitted_at, s.file_url
+      FROM assignment_submissions s
+      JOIN assignments a ON s.assignment_id = a.id
+      WHERE s.student_id = ?
+      ORDER BY s.submitted_at DESC
+    `, [userId]); // user_id used for student_id in submissions based on previous code
+    
+    res.json(tasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get CGPA Details
+const getCGPADetails = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    
+    const [grades] = await db.execute(`
+      SELECT a.title, a.course, s.grade 
+      FROM assignment_submissions s
+      JOIN assignments a ON s.assignment_id = a.id
+      WHERE s.student_id = ? AND s.grade IS NOT NULL
+      ORDER BY s.submitted_at DESC
+    `, [userId]);
+    
+    res.json(grades);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get Calendar Events (Lectures + Assignments)
+const getCalendarEvents = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    
+    // Lectures
+    const [lectures] = await db.execute(`
+      SELECT l.id, l.title, l.course, l.date, l.time, l.meeting_link, 'lecture' as type
+      FROM lectures l
+      JOIN course_students cs ON l.course = cs.course_name
+      WHERE cs.student_id = ?
+    `, [userId]);
+
+    // Assignments
+    const [assignments] = await db.execute(`
+      SELECT a.id, a.title, a.course, a.due_date as date, '23:59:00' as time, 'assignment' as type
+      FROM assignments a
+      JOIN course_students cs ON a.course = cs.course_name
+      WHERE cs.student_id = ?
+    `, [userId]);
+
+    res.json([...lectures, ...assignments]);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get pending and completed assignments
+const getAssignments = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    
+    const [assignments] = await db.execute(`
+      SELECT a.*, 
+        (SELECT s.file_url FROM assignment_submissions s WHERE s.assignment_id = a.id AND s.student_id = ?) as submission_url,
+        (SELECT s.grade FROM assignment_submissions s WHERE s.assignment_id = a.id AND s.student_id = ?) as grade
+      FROM assignments a
+      JOIN course_students cs ON a.course = cs.course_name
+      WHERE cs.student_id = ?
+      ORDER BY a.due_date ASC
+    `, [userId, userId, userId]);
+    
+    res.json(assignments);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Submit Assignment
+const submitAssignment = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload a file' });
+    }
+
+    const userId = req.user.id;
+    const { assignment_id } = req.body;
+
+    if (!assignment_id) {
+      return res.status(400).json({ error: 'Assignment ID is required' });
+    }
+
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: 'auto',
+      folder: 'campus_ai/submissions'
+    });
+
+    await db.execute(`
+      INSERT INTO assignment_submissions (assignment_id, student_id, file_url)
+      VALUES (?, ?, ?)
+    `, [assignment_id, userId, result.secure_url]);
+
+    res.status(201).json({ message: 'Assignment submitted successfully', file_url: result.secure_url });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getStudents,
   getStudentProfile,
@@ -205,5 +342,11 @@ module.exports = {
   updateStudentProfile,
   getOverview,
   getResume,
-  uploadResume
+  uploadResume,
+  getAttendanceDetails,
+  getCompletedTasks,
+  getCGPADetails,
+  getCalendarEvents,
+  getAssignments,
+  submitAssignment
 };

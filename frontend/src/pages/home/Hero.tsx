@@ -77,7 +77,7 @@ export function Hero() {
               <div className="w-3 h-3 rounded-full bg-green-500/80" />
             </div>
             
-            <div className="rounded-t-3xl overflow-hidden border-t border-x border-gray-200 dark:border-white/10 bg-brand-darker/80 h-[400px] flex items-center justify-center relative group">
+            <div className="rounded-t-3xl overflow-hidden border-t border-x border-gray-200 dark:border-white/10 bg-white/80 dark:bg-brand-darker/80 h-[400px] flex items-center justify-center relative group transition-colors">
               <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')] bg-cover bg-center opacity-30 group-hover:opacity-40 transition-opacity duration-700" />
               
               <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-transparent" />

@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 
 export function Footer() {
   return (
-    <footer className="relative mt-24 border-t border-gray-200 dark:border-white/10 bg-brand-dark overflow-hidden">
+    <footer className="relative mt-24 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-brand-dark overflow-hidden transition-colors">
       {/* Background Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[1px] bg-gradient-to-r from-transparent via-brand-primary to-transparent opacity-50" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-primary/10 blur-[100px] rounded-full pointer-events-none" />

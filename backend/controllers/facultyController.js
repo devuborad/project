@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const cloudinary = require('../config/cloudinary');
 
 // ========================
 // LECTURES
@@ -353,6 +354,72 @@ exports.deleteAssignment = async (req, res) => {
     res.json({ message: 'Deleted successfully' });
   } catch (error) {
     console.error('Error deleting assignment:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// ========================
+// NOTES
+// ========================
+exports.getNotes = async (req, res) => {
+  try {
+    const facultyId = req.user.id;
+    const [notes] = await db.execute(
+      'SELECT * FROM notes WHERE uploader_id = ? ORDER BY created_at DESC',
+      [facultyId]
+    );
+    res.json(notes);
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.uploadNote = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload a PDF file' });
+    }
+
+    const facultyId = req.user.id;
+    const { title, subject } = req.body;
+
+    if (!title || !subject) {
+      return res.status(400).json({ error: 'Title and subject are required' });
+    }
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: 'auto',
+      folder: 'campus_ai/notes'
+    });
+
+    const [dbResult] = await db.execute(`
+      INSERT INTO notes (uploader_id, title, subject, file_url, file_type, file_size)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [facultyId, title, subject, result.secure_url, 'PDF', (req.file.size / 1024 / 1024).toFixed(2) + 'MB']);
+
+    const [newNote] = await db.execute('SELECT * FROM notes WHERE id = ?', [dbResult.insertId]);
+    res.status(201).json(newNote[0]);
+  } catch (error) {
+    console.error('Error uploading note:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.deleteNote = async (req, res) => {
+  try {
+    const facultyId = req.user.id;
+    const { id } = req.params;
+    
+    // In a real app we'd delete from Cloudinary too, but just DB for now
+    const [result] = await db.execute('DELETE FROM notes WHERE id = ? AND uploader_id = ?', [id, facultyId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Note not found' });
+    }
+    res.json({ message: 'Deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting note:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };
