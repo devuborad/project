@@ -16,7 +16,7 @@ const registerUser = async (req, res, next) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { first_name, last_name, email, password, mobile_number, role, accessCode, prn_number } = req.body;
+    const { first_name, last_name, email, password, mobile_number, role, accessCode, prn_number, major, department } = req.body;
     const userRole = role || 'student';
 
     // For Faculty and Club Admin, set status to pending. Others are active.
@@ -45,9 +45,9 @@ const registerUser = async (req, res, next) => {
 
     // Create profile based on role
     if (userRole === 'student') {
-      await db.execute('INSERT INTO student_profiles (user_id, prn_number) VALUES (?, ?)', [userId, prn_number || null]);
+      await db.execute('INSERT INTO student_profiles (user_id, prn_number, major) VALUES (?, ?, ?)', [userId, prn_number || null, major || null]);
     } else if (userRole === 'faculty') {
-      await db.execute('INSERT INTO faculty_profiles (user_id) VALUES (?)', [userId]);
+      await db.execute('INSERT INTO faculty_profiles (user_id, department) VALUES (?, ?)', [userId, department || null]);
     } else if (userRole === 'admin') {
       await db.execute('INSERT INTO admins (user_id, access_level) VALUES (?, ?)', [userId, 'superadmin']);
     }

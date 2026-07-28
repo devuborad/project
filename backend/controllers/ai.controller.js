@@ -1,22 +1,21 @@
 const geminiService = require('../services/gemini.service');
-const intentService = require('../services/intent.service');
-const queryService = require('../services/query.service');
-const entityService = require('../services/entity.service');
-const contextBuilder = require('../services/contextBuilder.service');
+const agentRouter = require('../services/agentRouter.service');
+const attendanceAgent = require('../services/attendanceAgent.service');
+const assignmentAgent = require('../services/assignmentAgent.service');
+const careerAgent = require('../services/careerAgent.service');
 const db = require('../config/db');
 const pdfParse = require('pdf-parse');
 
 /**
  * Helper to fetch recent chat history for a user
  */
-async function getChatHistory(userId, limit = 4) {
+async function getChatHistory(userId, limit = 6) {
   if (!userId) return [];
   try {
     const [rows] = await db.execute(
       'SELECT prompt, response FROM ai_chats WHERE user_id = ? ORDER BY id DESC LIMIT ?',
       [userId, limit]
     );
-    // Reverse to get chronological order
     rows.reverse();
     const history = [];
     for (const row of rows) {
@@ -31,7 +30,7 @@ async function getChatHistory(userId, limit = 4) {
 }
 
 /**
- * Handles the AI chat endpoint logic with full Intent & Entity pipeline.
+ * Handles the AI chat endpoint logic using Multi-Agent Router (AgentRouterService).
  */
 const chat = async (req, res, next) => {
   try {
@@ -65,74 +64,152 @@ const chat = async (req, res, next) => {
     }
 
     // 1. Fetch Conversation History (Memory)
-    const history = await getChatHistory(userId, 4);
+    const history = await getChatHistory(userId, 6);
 
-    // 2. Detect Intent & Extract Entities
-    const startIntent = Date.now();
-    const { intent, confidence, entities } = await intentService.detectIntent(finalPrompt, history);
-    const intentTime = Date.now() - startIntent;
+    // 2. Delegate to Multi-Agent Router
+    const startRoute = Date.now();
+    const result = await agentRouter.routeAndExecute(finalPrompt, userId, history, { imagePart });
+    const elapsedMs = Date.now() - startRoute;
 
-    console.log(`[AI Controller] Intent: ${intent} | Conf: ${confidence} | Entities:`, entities);
+    console.log(`[Multi-Agent Chat] Agent: ${result.agent} | Intent: ${result.intent} | Confidence: ${result.confidence} | Time: ${elapsedMs}ms`);
 
-    // 3. Confidence Check
-    if (confidence < 0.70 && intent !== 'general') {
-      return res.status(200).json({
-        success: true,
-        intent: 'clarification',
-        response: `I'm not entirely sure if you mean ${intent}. Could you clarify what you're looking for?`,
-        source: 'system'
-      });
-    }
-
-    // 4. Execute Business Logic (Database Queries)
-    let context = null;
-    let rawData = null;
-    let queryTime = 0;
-    let source = 'gemini';
-
-    if (intent !== 'general') {
-      source = 'database';
-      const sanitizedEntities = entityService.sanitizeEntities(entities);
-      
-      const startQuery = Date.now();
-      rawData = await queryService.executeQuery(intent, userId, sanitizedEntities);
-      queryTime = Date.now() - startQuery;
-
-      // 5. Build Context
-      context = contextBuilder.buildContext(intent, sanitizedEntities, rawData);
-    }
-
-    // 6. Call Gemini
-    const startGemini = Date.now();
-    const responseText = await geminiService.generateChatResponse(finalPrompt, context, history, imagePart);
-    const geminiTime = Date.now() - startGemini;
-
-    // 7. Log Conversation Memory & Metrics
+    // 3. Log to ai_chats for backward compatibility
     if (userId) {
        try {
          await db.execute(
            'INSERT INTO ai_chats (user_id, prompt, response) VALUES (?, ?, ?)',
-           [userId, prompt, responseText] // We log the original prompt, not the giant pdf text
+           [userId, prompt, result.response]
          );
        } catch (dbError) {
          console.error('[AI Controller] Database Logging Error:', dbError.message);
        }
     }
 
-    console.log(`[AI Performance] Intent: ${intentTime}ms | DB: ${queryTime}ms | Gemini: ${geminiTime}ms`);
-
-    // 8. Return Structured Response
+    // 4. Return Structured Multi-Agent Response
     return res.status(200).json({ 
       success: true,
-      intent,
-      data: rawData,
-      response: responseText,
-      source 
+      agent: result.agent,
+      intent: result.intent,
+      confidence: result.confidence,
+      response: result.response,
+      data: result.data,
+      timestamp: result.timestamp
     });
 
   } catch (error) {
     console.error('[AI Controller] Chat Error:', error);
     next(error); 
+  }
+};
+
+/**
+ * GET /api/ai/suggestions - Provides personalized Multi-Agent suggestions for Dashboard
+ */
+const getSuggestions = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+
+    // Execute parallel data aggregation from specialized agents
+    const [attendanceData, assignmentsData] = await Promise.all([
+      attendanceAgent.getAttendanceData(userId),
+      assignmentAgent.getAssignmentsData(userId)
+    ]);
+
+    // Check if user has an active study plan
+    let todayStudyGoal = {
+      id: null,
+      title: 'Complete 2 hours of focused assignment work',
+      content: '- [ ] Complete draft for urgent assignment\n- [ ] Review 1 lecture slide deck in Learning Hub\n- [ ] Test recall with a 5-question practice quiz',
+      source: 'default'
+    };
+
+    if (userId) {
+      try {
+        const [planRows] = await db.execute(
+          'SELECT id, title, content, created_at FROM study_plans WHERE user_id = ? AND status = "active" ORDER BY id DESC LIMIT 1',
+          [userId]
+        );
+        if (planRows.length > 0) {
+          todayStudyGoal = {
+            id: planRows[0].id,
+            title: planRows[0].title,
+            content: planRows[0].content,
+            source: 'study_plans'
+          };
+        }
+      } catch (e) {
+        console.warn('[AI Controller] Could not load study plan:', e.message);
+      }
+    }
+
+    const topAssignment = assignmentsData.assignments[0] || null;
+
+    const attendanceAlert = {
+      status: attendanceData.overallPercentage >= 75 ? 'Optimal' : 'Low',
+      percentage: attendanceData.overallPercentage,
+      message: attendanceData.overallPercentage >= 75
+        ? `Optimal attendance! You can safely skip up to ${attendanceData.courseBreakdown[0]?.canSkip || 2} lectures in ${attendanceData.courseBreakdown[0]?.course || 'your classes'}.`
+        : `Warning: Overall attendance is ${attendanceData.overallPercentage}%. Attend the next ${attendanceData.courseBreakdown[0]?.neededTo75 || 3} lectures without skipping.`
+    };
+
+    const upcomingAssignment = topAssignment ? {
+      title: topAssignment.title,
+      course: topAssignment.course,
+      dueDate: topAssignment.dueDate,
+      priority: topAssignment.priority,
+      totalPending: assignmentsData.totalPending
+    } : {
+      title: 'No urgent assignments pending',
+      course: 'All courses up to date',
+      dueDate: 'N/A',
+      priority: 'Low',
+      totalPending: 0
+    };
+
+    return res.status(200).json({
+      success: true,
+      todayStudyGoal,
+      attendanceAlert,
+      upcomingAssignment,
+      recommendedSkills: [
+        'Agentic AI Engineering (Gemini API & Tool Calling)',
+        'Full-Stack TypeScript & React Architecture',
+        'Database Optimization & Cloud Deployment'
+      ],
+      aiGeneratedTips: [
+        'Use the 50/10 Pomodoro technique: 50 mins of deep focus followed by a 10 min walking break.',
+        'Review slide decks within 24 hours of a lecture to boost long-term memory retention by 60%.',
+        'Ask the Career Agent to scan your resume ATS score before applying for upcoming hackathons!'
+      ]
+    });
+  } catch (error) {
+    console.error('[AI Controller] getSuggestions Error:', error);
+    next(error);
+  }
+};
+
+/**
+ * GET /api/ai/plans - Retrieve saved study plans for the user
+ */
+const getStudyPlans = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(200).json({ success: true, plans: [] });
+    }
+
+    const [rows] = await db.execute(
+      'SELECT id, title, plan_type, content, status, created_at FROM study_plans WHERE user_id = ? ORDER BY id DESC LIMIT 10',
+      [userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      plans: rows
+    });
+  } catch (error) {
+    console.error('[AI Controller] getStudyPlans Error:', error);
+    next(error);
   }
 };
 
@@ -147,5 +224,7 @@ const listModels = async (req, res, next) => {
 
 module.exports = {
   chat,
+  getSuggestions,
+  getStudyPlans,
   listModels
 };

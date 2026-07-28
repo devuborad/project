@@ -27,6 +27,10 @@ class IntentService {
                 type: Type.NUMBER, 
                 description: "A number between 0.0 and 1.0 representing how confident you are in this intent classification." 
               },
+              needs_gemini: {
+                type: Type.BOOLEAN,
+                description: "Set to false if the user just wants to fetch or view database records (e.g., 'Show my notes', 'Upcoming events'). Set to true if the user requires explanation, summarization, or AI reasoning (e.g., 'Summarize notes', 'Explain React Hooks', 'What should I do?')."
+              },
               entities: {
                 type: Type.OBJECT,
                 properties: {
@@ -41,7 +45,7 @@ class IntentService {
                 }
               }
             },
-            required: ["intent", "confidence", "entities"]
+            required: ["intent", "confidence", "needs_gemini", "entities"]
           }
         },
         systemInstruction: `You are the Intent Detection Engine for CampusAI.
@@ -59,7 +63,13 @@ Your job is to read the user's prompt (and previous chat history if provided for
 11. timetable
 12. general (e.g. coding questions, casual chat, everything else without a specific database need)
 
-Extract any mentioned entities like subject, semester, company, etc. If none, return empty strings.`
+Extract any mentioned entities like subject, semester, company, etc. If none, return empty strings.
+
+CRITICAL:
+Determine if the AI (Gemini) is required to generate a response (needs_gemini: true), or if we can just show the user the raw database data (needs_gemini: false).
+- "Show React Notes" -> fetch data -> needs_gemini = false
+- "Summarize React Notes" -> needs summarization -> needs_gemini = true
+- "Explain React Hooks" -> needs AI explanation -> needs_gemini = true`
       });
 
       let historyText = history.length > 0 ? "Previous Context:\n" + history.map(h => `${h.role}: ${h.text}`).join("\n") + "\n\n" : "";

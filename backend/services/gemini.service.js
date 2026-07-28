@@ -76,8 +76,7 @@ Your responsibilities:
     ];
 
     const isDeprecated = (name) => {
-      return name.includes('gemini-2.5-flash') || 
-             name.includes('gemini-2.5-pro') || 
+      return name.includes('gemini-1.0') || 
              name.includes('gemini-1.5');
     };
 

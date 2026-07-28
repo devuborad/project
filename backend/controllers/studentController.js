@@ -133,13 +133,35 @@ const getOverview = async (req, res, next) => {
       WHERE student_id = ?
     `, [userId]); // user_id in course_students but student_id in submissions? Let's assume user_id.
 
+    // Get Recent Faculty Activity (Notes & Assignments)
+    const [recentNotes] = await db.execute(`
+      SELECT n.title, n.subject as course, n.created_at as date, 'material' as type, u.first_name, u.last_name
+      FROM notes n
+      JOIN users u ON n.uploader_id = u.id
+      ORDER BY n.created_at DESC
+      LIMIT 3
+    `);
+
+    const [recentAssignments] = await db.execute(`
+      SELECT a.title, a.course, a.created_at as date, 'assignment' as type, u.first_name, u.last_name
+      FROM assignments a
+      JOIN users u ON a.faculty_id = u.id
+      ORDER BY a.created_at DESC
+      LIMIT 3
+    `);
+
+    const recentActivity = [...recentNotes, ...recentAssignments]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 5);
+
     res.json({
       attendance,
       cgpa: 8.9, // Mocked for now
       studyHours: 24, // Mocked for now
       tasksDone: completed_assignments,
       totalTasks: total_assignments,
-      upcomingSchedule
+      upcomingSchedule,
+      recentActivity
     });
   } catch (error) {
     next(error);
@@ -257,7 +279,7 @@ const getCGPADetails = async (req, res, next) => {
   }
 };
 
-// Get Calendar Events (Lectures + Assignments)
+// Get Calendar Events (Lectures, Assignments, Hackathons, Events, Attendance)
 const getCalendarEvents = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -272,13 +294,44 @@ const getCalendarEvents = async (req, res, next) => {
 
     // Assignments
     const [assignments] = await db.execute(`
-      SELECT a.id, a.title, a.course, a.due_date as date, '23:59:00' as time, 'assignment' as type
+      SELECT a.id, a.title, a.course, a.due_date as date, '23:59:00' as time, 'assignment' as type, a.description
       FROM assignments a
       JOIN course_students cs ON a.course = cs.course_name
       WHERE cs.student_id = ?
     `, [userId]);
 
-    res.json([...lectures, ...assignments]);
+    // Club Events (Assuming any student can see events, or only members?)
+    // The prompt says "event all club detail and student also shaw their lecture"
+    // Let's get all upcoming events
+    const [events] = await db.execute(`
+      SELECT e.id, e.title, c.name as course, e.event_date as date, TIME(e.event_date) as time, 'event' as type, e.description, e.location
+      FROM events e
+      JOIN clubs c ON e.club_id = c.id
+    `);
+
+    // Club Hackathons
+    const [hackathons] = await db.execute(`
+      SELECT h.id, h.title, c.name as course, h.start_date as date, TIME(h.start_date) as time, 'hackathon' as type, h.description
+      FROM club_hackathons h
+      JOIN clubs c ON h.club_id = c.id
+    `);
+
+    // Get student profile ID
+    const [[studentProfile]] = await db.execute('SELECT id FROM student_profiles WHERE user_id = ?', [userId]);
+    
+    let attendance = [];
+    if (studentProfile) {
+      // Attendance records
+      const [att] = await db.execute(`
+        SELECT a.id, l.title, l.course, a.date, l.time, 'attendance' as type, a.status as description
+        FROM attendance a
+        JOIN lectures l ON a.lecture_id = l.id
+        WHERE a.student_id = ?
+      `, [studentProfile.id]);
+      attendance = att;
+    }
+
+    res.json([...lectures, ...assignments, ...events, ...hackathons, ...attendance]);
   } catch (error) {
     next(error);
   }

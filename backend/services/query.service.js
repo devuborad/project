@@ -18,15 +18,58 @@ class QueryService {
         case 'attendance':
           const [profile] = await db.execute('SELECT id FROM student_profiles WHERE user_id = ?', [userId]);
           if (!profile || profile.length === 0) return [];
+          const studentId = profile[0].id;
+
+          let attendanceQuery = 'SELECT course, status FROM attendance WHERE student_id = ?';
+          let queryParams = [studentId];
           
           if (entities.subject) {
-             query = 'SELECT course as title, date as description, status FROM attendance WHERE student_id = ? AND course LIKE ? ORDER BY date DESC LIMIT 10';
-             params = [profile[0].id, subj];
-          } else {
-             query = 'SELECT course as title, date as description, status FROM attendance WHERE student_id = ? ORDER BY date DESC LIMIT 10';
-             params = [profile[0].id];
+             attendanceQuery += ' AND course LIKE ?';
+             queryParams.push(subj);
           }
-          break;
+          
+          const [attendanceRows] = await db.execute(attendanceQuery, queryParams);
+          if (attendanceRows.length === 0) {
+            return []; // Will trigger "No attendance records were found for your account."
+          }
+
+          // Calculate subject-wise and overall
+          let overallTotal = 0;
+          let overallPresent = 0;
+          const subjectStats = {};
+
+          attendanceRows.forEach(row => {
+            if (!subjectStats[row.course]) {
+              subjectStats[row.course] = { total: 0, present: 0 };
+            }
+            subjectStats[row.course].total++;
+            overallTotal++;
+            
+            if (row.status === 'Present') {
+              subjectStats[row.course].present++;
+              overallPresent++;
+            }
+          });
+
+          let resultText = 'Student Attendance\n\n';
+          
+          for (const [course, stats] of Object.entries(subjectStats)) {
+            const percentage = Math.round((stats.present / stats.total) * 100);
+            resultText += `${course} : ${percentage}%\n`;
+            if (percentage < 75) {
+              const reqClasses = Math.ceil((0.75 * stats.total - stats.present) / 0.25);
+              resultText += `(Needs to attend ${reqClasses} more consecutive classes to reach 75%)\n`;
+            }
+          }
+
+          const overallPercentage = Math.round((overallPresent / overallTotal) * 100);
+          resultText += `\nOverall : ${overallPercentage}%\n`;
+          if (overallPercentage < 75) {
+            const overallReq = Math.ceil((0.75 * overallTotal - overallPresent) / 0.25);
+            resultText += `(Needs to attend ${overallReq} more consecutive classes overall to reach 75%)\n`;
+          }
+
+          return [{ context: resultText }];
 
         case 'assignments':
           query = 'SELECT title, course as description, due_date FROM assignments WHERE due_date >= NOW() ORDER BY due_date ASC LIMIT 10';
