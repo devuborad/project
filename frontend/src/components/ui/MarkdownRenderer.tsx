@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check } from 'lucide-react';
 
@@ -28,8 +28,8 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
             
             if (!inline && match) {
               return (
-                <div className="relative my-4 rounded-xl overflow-hidden border border-white/10 bg-[#1e1e1e]">
-                  <div className="flex items-center justify-between px-4 py-2 bg-black/40 border-b border-white/5">
+                <div className="relative my-4 rounded-xl overflow-hidden border border-red-900/30 bg-[#1e1e1e] shadow-lg shadow-red-900/10">
+                  <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-red-900/30">
                     <span className="text-xs text-gray-400 font-mono uppercase">{language}</span>
                     <button
                       onClick={() => copyToClipboard(codeString)}
@@ -74,16 +74,16 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           },
           table({ children }) {
             return (
-              <div className="overflow-x-auto my-4 rounded-xl border border-white/10">
+              <div className="overflow-x-auto my-4 rounded-xl border border-red-900/30 bg-black/20">
                 <table className="w-full text-left border-collapse">{children}</table>
               </div>
             );
           },
           th({ children }) {
-            return <th className="p-3 bg-white/5 border-b border-white/10 font-semibold">{children}</th>;
+            return <th className="p-3 bg-red-900/20 border-b border-red-900/30 font-semibold text-red-100">{children}</th>;
           },
           td({ children }) {
-            return <td className="p-3 border-b border-white/5">{children}</td>;
+            return <td className="p-3 border-b border-white/5 text-gray-300">{children}</td>;
           }
         }}
       >

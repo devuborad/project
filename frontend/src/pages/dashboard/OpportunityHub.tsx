@@ -55,18 +55,25 @@ export function OpportunityHub() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col gap-8">
-      {/* Header */}
+    <div className="max-w-7xl mx-auto flex flex-col gap-8 pb-12">
+      {/* Supercharged Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Opportunity Hub</h1>
-          <p className="text-gray-600 dark:text-gray-400">Discover internships, hackathons, and scholarships tailored to your skills.</p>
+          <div className="inline-flex items-center gap-2 mb-2.5">
+            <span className="ai-badge !py-1 !px-3 !text-xs">ALGORITHMIC ROLE MATCHING</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-1.5 tracking-tight">
+            Opportunity <span className="text-gradient">Hub</span>
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+            Discover internships, hackathons, and research scholarships tailored to your resume ATS skills.
+          </p>
         </div>
         <div className="relative w-full md:w-80 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input 
             type="text" 
-            placeholder="Search roles, companies..." 
+            placeholder="Search roles, companies, tags..." 
             className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-brand-primary focus:bg-gray-200 dark:bg-white/10 w-full transition-all"
           />
         </div>
@@ -80,7 +87,7 @@ export function OpportunityHub() {
             onClick={() => setActiveTag(tag)}
             className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
               activeTag === tag 
-                ? 'bg-brand-primary text-gray-900 dark:text-white' 
+                ? 'bg-brand-primary text-gray-900 dark:text-white shadow-[0_0_15px_rgba(255,31,77,0.3)]' 
                 : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:bg-white/10 hover:text-gray-900 dark:text-white border border-gray-100 dark:border-white/5'
             }`}
           >

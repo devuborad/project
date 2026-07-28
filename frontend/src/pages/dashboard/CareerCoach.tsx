@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, User, Copy, Check, Sparkles, Loader2, Paperclip, FileText, Image as ImageIcon, X } from 'lucide-react';
+import { Send, Bot, User, Copy, Check, Loader2, Paperclip, FileText, Image as ImageIcon, X } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { MarkdownRenderer } from '../../components/ui/MarkdownRenderer';
 
@@ -107,21 +107,29 @@ export function CareerCoach() {
   return (
     <div className="max-w-5xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-          <Sparkles className="w-8 h-8 text-red-500" />
-          AI Career Coach
+        <div className="inline-flex items-center gap-2 mb-2">
+          <span className="ai-badge !py-1 !px-3 !text-xs">GPT-4o ADAPTIVE COACH</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3 tracking-tight">
+          AI Career <span className="text-gradient">Coach</span>
         </h1>
-        <p className="text-gray-500 mt-1">Personalized guidance on skills, salaries, roles, and interview prep.</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
+          Algorithmic interview preparation, compensation benchmarking, skill-gap detection, and roadmap advice.
+        </p>
       </div>
 
-      <GlassCard className="flex-1 flex flex-col bg-black/40 border-red-500/20 overflow-hidden relative">
+      <GlassCard className="flex-1 flex flex-col bg-white/80 dark:bg-black/40 border-gray-200/80 dark:border-white/10 overflow-hidden relative">
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
           {messages.length === 0 && !loading && (
-            <div className="h-full flex flex-col items-center justify-center text-center opacity-70">
-              <Bot className="w-16 h-16 text-red-500 mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-2">Welcome to Your Career Hub!</h3>
-              <p className="text-gray-400 max-w-md">Tell me about your current skills, goals, or ask for resume advice. I'll analyze your profile and provide a comprehensive career path.</p>
+            <div className="h-full flex flex-col items-center justify-center text-center opacity-80">
+              <div className="w-20 h-20 rounded-2xl bg-brand-gradient flex items-center justify-center mb-5 shadow-lg shadow-brand-primary/30">
+                <Bot className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">Welcome to Your AI Career Hub!</h3>
+              <p className="text-gray-600 dark:text-gray-400 max-w-md text-sm leading-relaxed">
+                Tell me about your current technical stack, target internships, or upload your resume for review. I'll architect a personalized roadmap to land your dream role.
+              </p>
             </div>
           )}
 

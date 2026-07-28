@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GlassCard } from '../ui/GlassCard';
 import { X } from 'lucide-react';
 import { Button } from '../ui/Button';

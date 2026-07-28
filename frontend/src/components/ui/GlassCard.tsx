@@ -7,23 +7,41 @@ export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
-  ({ className, hoverEffect = true, glowEffect = true, ...props }, ref) => {
+  ({ className, hoverEffect = true, glowEffect = true, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          "bg-white/[0.03] backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden relative group",
-          hoverEffect && "transition-all duration-500 hover:-translate-y-2 hover:bg-white/[0.06] hover:border-white/20",
-          glowEffect && "hover:shadow-[0_0_40px_rgba(255,31,77,0.15)]",
-          className
+          "card w-full h-full relative group transition-all duration-300 rounded-[20px]",
+          !hoverEffect && "!shadow-none !bg-none"
         )}
+        style={{
+          borderRadius: "20px",
+          ...props.style
+        }}
         {...props}
       >
-        {/* Subtle inner top highlight */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        <div className="relative z-10 h-full">
-          {props.children}
+        <div
+          className={cn(
+            "card2 w-full h-full rounded-[20px] overflow-hidden transition-all duration-200 relative z-10",
+            "bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white",
+            "border border-gray-200/80 dark:border-white/10",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/80 focus-visible:ring-offset-2",
+            className
+          )}
+          style={{
+            borderRadius: "20px"
+          }}
+        >
+          {/* Subtle inner top highlight */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-primary/30 dark:via-white/25 to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          
+          {/* Ambient subtle corner glow on hover */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-primary/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+          <div className="relative z-10 w-full h-full flex flex-col">
+            {children}
+          </div>
         </div>
       </div>
     )
@@ -32,3 +50,4 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
 GlassCard.displayName = "GlassCard"
 
 export { GlassCard }
+

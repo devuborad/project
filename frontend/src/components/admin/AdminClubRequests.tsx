@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GlassCard } from '../ui/GlassCard';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 export function AdminClubRequests() {
   const [requests, setRequests] = useState<any[]>([]);

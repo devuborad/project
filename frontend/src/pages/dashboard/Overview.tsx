@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Clock, BookOpen, AlertCircle, TrendingUp, Sparkles, ChevronRight, Briefcase, FileText, X, CheckCircle2 } from 'lucide-react';
+import { Bot, Clock, BookOpen, AlertCircle, TrendingUp, Sparkles, ChevronRight, Briefcase, FileText, X, CheckCircle2, FileSearch, Compass, Target, Lightbulb } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Button } from '../../components/ui/Button';
 import { FacultyOverview } from './FacultyOverview';
+import { useNavigate } from 'react-router-dom';
 
 export function DashboardOverview() {
   const [user, setUser] = useState<any>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [aiSuggestions, setAiSuggestions] = useState<any>(null);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Modal states
   const [activeModal, setActiveModal] = useState<'attendance' | 'cgpa' | 'tasks' | null>(null);
@@ -37,12 +41,31 @@ export function DashboardOverview() {
         setLoading(false);
       }
     };
+
+    const fetchSuggestions = async () => {
+      try {
+        const token = localStorage.getItem('campus_token');
+        const res = await fetch('http://localhost:5000/api/ai/suggestions', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          setAiSuggestions(resData);
+        }
+      } catch (error) {
+        console.error('Error fetching AI suggestions:', error);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    };
     
     // Only fetch if student
     if (userStr && JSON.parse(userStr).role !== 'faculty') {
       fetchOverview();
+      fetchSuggestions();
     } else {
       setLoading(false);
+      setSuggestionsLoading(false);
     }
   }, []);
 
@@ -76,38 +99,53 @@ export function DashboardOverview() {
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading your dashboard...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center p-16 text-center text-gray-500 min-h-[60vh] gap-3">
+        <div className="w-10 h-10 rounded-full border-2 border-brand-primary border-t-transparent animate-spin" />
+        <p className="text-sm font-semibold">Synchronizing Neural Workspace...</p>
+      </div>
+    );
   }
 
   const attendance = data?.attendance || 0;
   const tasksDone = data?.tasksDone || 0;
   const totalTasks = data?.totalTasks || 0;
   const upcomingSchedule = data?.upcomingSchedule || [];
+  const recentActivity = data?.recentActivity || [];
 
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto relative">
-      {/* Welcome Banner */}
+    <div className="flex flex-col gap-8 max-w-7xl mx-auto relative pb-12">
+      {/* Supercharged Welcome Banner */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl bg-brand-gradient p-8 text-gray-900 dark:text-white shadow-[0_0_40px_rgba(255,31,77,0.2)]"
+        className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-brand-dark via-gray-900 to-brand-dark p-8 sm:p-10 text-white shadow-2xl border border-white/15"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 blur-[80px] rounded-full pointer-events-none transform translate-x-1/2 -translate-y-1/2" />
+        {/* Ambient Aurora Orbs */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-brand-primary/25 blur-[100px] rounded-full pointer-events-none transform translate-x-1/3 -translate-y-1/3" />
+        <div className="absolute bottom-0 left-10 w-64 h-64 bg-purple-500/20 blur-[90px] rounded-full pointer-events-none" />
+
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold mb-4 border border-white/20">
-              <Sparkles className="w-3 h-3" />
-              AI Daily Briefing
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/10 backdrop-blur-xl rounded-full text-xs font-bold mb-4 border border-white/20 text-brand-primary shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <span>AI DAILY ACADEMIC BRIEFING</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Good morning, {user?.first_name || 'Student'}!</h1>
-            <p className="text-white/80 max-w-xl">
-              You have {totalTasks - tasksDone} assignments pending. {upcomingSchedule.length > 0 ? `Your next class is ${upcomingSchedule[0]?.title}.` : 'No upcoming classes today.'}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-2.5 tracking-tight">
+              Welcome back, <span className="text-gradient">{user?.first_name || 'Student'}</span>!
+            </h1>
+            <p className="text-gray-300 text-sm sm:text-base max-w-2xl leading-relaxed">
+              You have <span className="font-bold text-white">{totalTasks - tasksDone} assignments</span> pending review. {upcomingSchedule.length > 0 ? `Your next lecture is "${upcomingSchedule[0]?.title}" at ${upcomingSchedule[0]?.time}.` : 'No upcoming classes scheduled for today.'}
             </p>
           </div>
           <div className="shrink-0">
-            <Button variant="glass" className="bg-white/20 border-white/30 text-gray-900 dark:text-white hover:bg-white/30">
-              <Bot className="w-5 h-5 mr-2" />
-              Start Copilot
+            <Button 
+              variant="gradient" 
+              onClick={() => navigate('/learning-hub')}
+              className="px-6 py-3.5 font-bold rounded-2xl shadow-xl shadow-brand-primary/30 flex items-center gap-2"
+            >
+              <Bot className="w-5 h-5 text-white" />
+              <span>Launch AI Workspace</span>
             </Button>
           </div>
         </div>
@@ -120,63 +158,107 @@ export function DashboardOverview() {
         <div className="md:col-span-2 flex flex-col gap-6">
           
           {/* Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <GlassCard className="p-4 flex flex-col gap-2 cursor-pointer hover:border-brand-primary/50 transition-colors" onClick={() => openModal('attendance')}>
-              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Attendance</span>
-              <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">{attendance}%</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <GlassCard 
+              className="p-5 flex flex-col justify-between cursor-pointer border border-gray-200/80 dark:border-white/10 hover:border-brand-primary/50 transition-all group" 
+              onClick={() => openModal('attendance')}
+              hoverEffect={true}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Attendance</span>
+                <Clock className="w-4 h-4 text-brand-primary group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-gray-900 dark:text-white">{attendance}%</span>
                 {attendance >= 75 ? (
-                  <span className="text-xs text-green-400 mb-1 flex items-center"><TrendingUp className="w-3 h-3 mr-1" />Good</span>
+                  <span className="text-xs font-bold text-green-500 flex items-center"><TrendingUp className="w-3 h-3 mr-0.5" />Optimal</span>
                 ) : (
-                  <span className="text-xs text-red-400 mb-1 flex items-center"><AlertCircle className="w-3 h-3 mr-1" />Low</span>
+                  <span className="text-xs font-bold text-red-500 flex items-center"><AlertCircle className="w-3 h-3 mr-0.5" />Low</span>
                 )}
               </div>
+              <span className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">Click to view log →</span>
             </GlassCard>
-            <GlassCard className="p-4 flex flex-col gap-2 cursor-pointer hover:border-brand-primary/50 transition-colors" onClick={() => openModal('cgpa')}>
-              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">CGPA</span>
-              <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">{data?.cgpa || 'N/A'}</span>
+
+            <GlassCard 
+              className="p-5 flex flex-col justify-between cursor-pointer border border-gray-200/80 dark:border-white/10 hover:border-brand-primary/50 transition-all group" 
+              onClick={() => openModal('cgpa')}
+              hoverEffect={true}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">CGPA</span>
+                <TrendingUp className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
               </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-gray-900 dark:text-white">{data?.cgpa || 'N/A'}</span>
+              </div>
+              <span className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">Semester grades →</span>
             </GlassCard>
-            <GlassCard className="p-4 flex flex-col gap-2 cursor-default">
-              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Study Hours</span>
-              <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">{data?.studyHours || 0}h</span>
-                <span className="text-xs text-gray-500 mb-1">this week</span>
+
+            <GlassCard className="p-5 flex flex-col justify-between border border-gray-200/80 dark:border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Study Hours</span>
+                <BookOpen className="w-4 h-4 text-blue-400" />
               </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-gray-900 dark:text-white">{data?.studyHours || 0}h</span>
+                <span className="text-xs text-gray-500">this week</span>
+              </div>
+              <span className="text-[10px] text-green-500 mt-2 font-semibold">↑ 12% vs last week</span>
             </GlassCard>
-            <GlassCard className="p-4 flex flex-col gap-2 cursor-pointer hover:border-brand-primary/50 transition-colors" onClick={() => openModal('tasks')}>
-              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Tasks Done</span>
-              <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">{tasksDone}</span>
-                <span className="text-xs text-gray-500 mb-1">/ {totalTasks}</span>
+
+            <GlassCard 
+              className="p-5 flex flex-col justify-between cursor-pointer border border-gray-200/80 dark:border-white/10 hover:border-brand-primary/50 transition-all group" 
+              onClick={() => openModal('tasks')}
+              hoverEffect={true}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tasks Done</span>
+                <CheckCircle2 className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
               </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-gray-900 dark:text-white">{tasksDone}</span>
+                <span className="text-xs text-gray-500">/ {totalTasks}</span>
+              </div>
+              <span className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">Completed queue →</span>
             </GlassCard>
           </div>
 
           {/* Upcoming Schedule */}
-          <GlassCard className="p-6">
+          <GlassCard className="p-7 border border-gray-200/80 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Upcoming Schedule</h2>
-              <button className="text-sm text-brand-primary hover:text-brand-secondary transition-colors flex items-center">
-                View All <ChevronRight className="w-4 h-4 ml-1" />
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Upcoming Schedule</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Live academic timetable and classroom locations</p>
+              </div>
+              <button 
+                onClick={() => navigate('/learning-hub')} 
+                className="text-xs font-semibold text-brand-primary hover:text-brand-secondary transition-colors flex items-center gap-1 px-3 py-1.5 rounded-full bg-brand-primary/10"
+              >
+                <span>View Full Calendar</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
             
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3.5">
               {upcomingSchedule.length > 0 ? upcomingSchedule.map((item: any, i: number) => (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white/[0.04] transition-colors group cursor-pointer">
-                  <div className="w-20 shrink-0 text-sm font-medium text-gray-600 dark:text-gray-400 mt-0.5">{item.time}</div>
-                  <div className="w-2 h-2 rounded-full bg-gray-600 mt-2 shrink-0 group-hover:bg-brand-primary transition-colors" />
-                  <div className="flex-1">
-                    <h4 className="text-gray-900 dark:text-white font-medium mb-1 group-hover:text-brand-primary transition-colors">{item.title}</h4>
-                    <span className="text-xs px-2 py-1 rounded-md border bg-blue-500/20 text-blue-400 border-blue-500/20">
-                      {item.course}
-                    </span>
+                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/[0.03] border border-gray-200/60 dark:border-white/5 hover:border-brand-primary/30 transition-all group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 shrink-0 text-xs font-mono font-bold text-brand-primary px-2.5 py-1.5 rounded-xl bg-brand-primary/10 text-center">
+                      {item.time}
+                    </div>
+                    <div>
+                      <h4 className="text-gray-900 dark:text-white font-bold text-sm sm:text-base group-hover:text-brand-primary transition-colors">{item.title}</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.course}</p>
+                    </div>
                   </div>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20">
+                    Live Session
+                  </span>
                 </div>
               )) : (
-                <p className="text-gray-500 text-sm">No upcoming classes.</p>
+                <div className="p-8 rounded-2xl bg-gray-50 dark:bg-white/[0.02] border border-gray-200/60 dark:border-white/5 text-center">
+                  <p className="text-gray-500 text-sm font-medium">No classes scheduled for today. Enjoy your study time!</p>
+                </div>
               )}
             </div>
           </GlassCard>
@@ -186,56 +268,213 @@ export function DashboardOverview() {
         {/* Right Column (1/3) */}
         <div className="flex flex-col gap-6">
           
-          {/* AI Suggestions */}
-          <GlassCard className="p-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/10 blur-[40px] rounded-full" />
-            <div className="flex items-center gap-2 mb-6 relative z-10">
-              <Bot className="w-5 h-5 text-brand-primary" />
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Copilot Suggestions</h2>
-            </div>
+          {/* Multi-Agent AI Suggestions */}
+          <GlassCard className="p-6 relative overflow-hidden border border-brand-primary/30 bg-gradient-to-br from-white/95 via-white/70 to-transparent dark:from-white/[0.05] dark:via-white/[0.02] dark:to-transparent">
+            <div className="absolute top-0 right-0 w-36 h-36 bg-brand-primary/15 blur-[45px] rounded-full pointer-events-none" />
             
-            <div className="flex flex-col gap-3 relative z-10">
-              {totalTasks - tasksDone > 0 && (
-                <div className="p-4 rounded-2xl bg-brand-primary/10 border border-brand-primary/20 cursor-pointer hover:bg-brand-primary/20 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-brand-primary shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-gray-900 dark:text-white text-sm font-medium mb-1">Assignments Pending</h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">You have {totalTasks - tasksDone} assignments left to submit.</p>
-                    </div>
-                  </div>
+            <div className="flex items-center justify-between mb-5 relative z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-brand-gradient flex items-center justify-center shadow-md shadow-brand-primary/30">
+                  <Sparkles className="w-4 h-4 text-white" />
                 </div>
-              )}
-              
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-gray-200 dark:border-white/10 cursor-pointer hover:bg-white/[0.06] transition-colors">
-                <div className="flex items-start gap-3">
-                  <BookOpen className="w-5 h-5 text-gray-600 dark:text-gray-400 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-gray-900 dark:text-white text-sm font-medium mb-1">Study Materials</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Review your past notes in the Learning Hub.</p>
-                  </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Multi-Agent AI Suggestions</h2>
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">4 Active Campus Agents</span>
                 </div>
               </div>
+              <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+                Live AI
+              </span>
+            </div>
+
+            {suggestionsLoading ? (
+              <div className="py-8 text-center text-xs text-gray-500 dark:text-gray-400 animate-pulse">
+                Consulting Attendance, Assignment & Career Agents...
+              </div>
+            ) : aiSuggestions ? (
+              <div className="flex flex-col gap-3.5 relative z-10">
+                {/* 1. Today's Study Goal (Campus Assistant) */}
+                <div 
+                  onClick={() => navigate('/dashboard/study-agent')}
+                  className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/25 cursor-pointer hover:bg-purple-500/15 transition-all group shadow-sm"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-400 uppercase tracking-wider">
+                      <Target className="w-3 h-3" /> Today's Study Goal
+                    </span>
+                    <span className="text-[10px] font-semibold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full">
+                      Campus Assistant
+                    </span>
+                  </div>
+                  <h4 className="text-gray-900 dark:text-white text-xs font-bold mb-1 group-hover:text-purple-400 transition-colors">
+                    {aiSuggestions.todayStudyGoal?.title || "Complete 2 hours of focused assignment work"}
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 whitespace-pre-line leading-relaxed">
+                    {aiSuggestions.todayStudyGoal?.content || "- [ ] Complete draft for urgent assignment\n- [ ] Review lecture slide deck"}
+                  </p>
+                </div>
+
+                {/* 2. Attendance Alert (Attendance Agent) */}
+                <div 
+                  onClick={() => openModal('attendance')}
+                  className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 cursor-pointer hover:bg-amber-500/15 transition-all group shadow-sm"
+                >
+                  <div className="flex items-start justify-between mb-1.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                      <Clock className="w-3 h-3" /> Attendance Alert
+                    </span>
+                    <span className="text-[10px] font-semibold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full">
+                      Attendance Agent
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-700 dark:text-gray-200 font-medium">
+                    {aiSuggestions.attendanceAlert?.message || "Optimal attendance! You can safely skip up to 2 lectures."}
+                  </p>
+                </div>
+
+                {/* 3. Priority Assignment (Assignment Agent) */}
+                <div 
+                  onClick={() => openModal('tasks')}
+                  className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/25 cursor-pointer hover:bg-blue-500/15 transition-all group shadow-sm"
+                >
+                  <div className="flex items-start justify-between mb-1.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                      <FileText className="w-3 h-3" /> Priority Assignment
+                    </span>
+                    <span className="text-[10px] font-semibold text-blue-300 bg-blue-500/20 px-2 py-0.5 rounded-full">
+                      Assignment Agent
+                    </span>
+                  </div>
+                  <h4 className="text-gray-900 dark:text-white text-xs font-bold">
+                    {aiSuggestions.upcomingAssignment?.title || "No urgent assignments pending"}
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                    Course: {aiSuggestions.upcomingAssignment?.course || "All courses up to date"} | Due: {aiSuggestions.upcomingAssignment?.dueDate || "N/A"}
+                  </p>
+                </div>
+
+                {/* 4. Recommended Skills (Career Agent) */}
+                <div 
+                  onClick={() => navigate('/opportunity-hub')}
+                  className="p-4 rounded-2xl bg-pink-500/10 border border-pink-500/25 cursor-pointer hover:bg-pink-500/15 transition-all group shadow-sm"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pink-400 uppercase tracking-wider">
+                      <Briefcase className="w-3 h-3" /> Recommended Skills
+                    </span>
+                    <span className="text-[10px] font-semibold text-pink-300 bg-pink-500/20 px-2 py-0.5 rounded-full">
+                      Career Agent
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiSuggestions.recommendedSkills?.map((skill: string, i: number) => (
+                      <span key={i} className="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-white/10 dark:bg-black/20 text-gray-800 dark:text-gray-200 border border-white/10">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 5. AI Generated Daily Tip */}
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-2.5 shadow-sm">
+                  <Lightbulb className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                    <span className="font-bold text-emerald-400 mr-1">💡 Tip of the Day:</span>
+                    {aiSuggestions.aiGeneratedTips?.[0] || "Use the 50/10 Pomodoro rule: 50 minutes of deep study, 10 minutes away from screens."}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </GlassCard>
+
+          {/* Quick AI Tool Launchers */}
+          <GlassCard className="p-6 border border-gray-200/80 dark:border-white/10">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Neural AI Toolkit</h2>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button 
+                onClick={() => navigate('/dashboard/study-agent')}
+                className="col-span-2 flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-brand-primary/20 to-brand-secondary/10 border border-brand-primary/40 hover:border-brand-primary transition-all text-left group shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-brand-primary/20 flex items-center justify-center shrink-0">
+                    <Bot className="w-4 h-4 text-brand-primary" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-gray-900 dark:text-white group-hover:text-brand-primary transition-colors block">Study Agent (New)</span>
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 block">AI Academic Tutor & PDF Kit</span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-primary text-white">PRO</span>
+              </button>
+
+              <button 
+                onClick={() => navigate('/learning-hub')}
+                className="flex items-center gap-3 p-3 rounded-xl bg-gray-100/70 dark:bg-white/[0.04] border border-gray-200/70 dark:border-white/10 hover:border-brand-primary/50 transition-all text-left group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 text-blue-400" />
+                </div>
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand-primary transition-colors">Learning Hub</span>
+              </button>
+
+              <button 
+                onClick={() => navigate('/opportunity-hub')}
+                className="flex items-center gap-3 p-3 rounded-xl bg-gray-100/70 dark:bg-white/[0.04] border border-gray-200/70 dark:border-white/10 hover:border-brand-primary/50 transition-all text-left group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+                  <Briefcase className="w-4 h-4 text-green-400" />
+                </div>
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand-primary transition-colors">Opportunities</span>
+              </button>
+
+              <button 
+                onClick={() => navigate('/resume-analyzer')}
+                className="flex items-center gap-3 p-3 rounded-xl bg-gray-100/70 dark:bg-white/[0.04] border border-gray-200/70 dark:border-white/10 hover:border-brand-primary/50 transition-all text-left group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                  <FileSearch className="w-4 h-4 text-yellow-400" />
+                </div>
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand-primary transition-colors">Resume AI</span>
+              </button>
+
+              <button 
+                onClick={() => navigate('/roadmap-generator')}
+                className="flex items-center gap-3 p-3 rounded-xl bg-gray-100/70 dark:bg-white/[0.04] border border-gray-200/70 dark:border-white/10 hover:border-brand-primary/50 transition-all text-left group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                  <Compass className="w-4 h-4 text-purple-400" />
+                </div>
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand-primary transition-colors">AI Roadmap</span>
+              </button>
             </div>
           </GlassCard>
 
-          {/* Quick Actions */}
-          <GlassCard className="p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white/[0.05] hover:border-gray-200 dark:border-white/10 transition-all group text-gray-600 dark:text-gray-400 hover:text-brand-primary">
-                <FileText className="w-6 h-6" />
-                <span className="text-xs font-medium text-center">Learning Hub</span>
-              </button>
-              <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white/[0.05] hover:border-gray-200 dark:border-white/10 transition-all group text-gray-600 dark:text-gray-400 hover:text-brand-primary">
-                <Briefcase className="w-6 h-6" />
-                <span className="text-xs font-medium text-center">Opportunity Hub</span>
-              </button>
+          {/* Recent Faculty Activity */}
+          <GlassCard className="p-6 border border-gray-200/80 dark:border-white/10">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Recent Campus Activity</h2>
+            <div className="flex flex-col gap-3.5">
+              {recentActivity.length > 0 ? recentActivity.map((item: any, i: number) => (
+                <div key={i} className="flex flex-col gap-1.5 pb-3 border-b border-gray-200/60 dark:border-white/5 last:border-0 last:pb-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white line-clamp-1">{item.title}</span>
+                    <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary shrink-0">
+                      {item.type}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px] text-gray-500">
+                    <span className="font-medium text-gray-600 dark:text-gray-400">{item.course}</span>
+                    <span>{item.first_name} {item.last_name}</span>
+                  </div>
+                </div>
+              )) : (
+                <p className="text-gray-500 text-xs py-2">No recent campus activity broadcasted.</p>
+              )}
             </div>
           </GlassCard>
 
         </div>
       </div>
+
 
       {/* Detail Modals */}
       <AnimatePresence>

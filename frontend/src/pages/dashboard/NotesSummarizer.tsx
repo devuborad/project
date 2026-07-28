@@ -123,16 +123,23 @@ export function NotesSummarizer() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      {/* Supercharged Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Notes Summarizer</h1>
-          <p className="text-gray-500 mt-1">Transform documents into Flashcards, Quizzes, and Summaries</p>
+          <div className="inline-flex items-center gap-2 mb-3">
+            <span className="ai-badge !py-1 !px-3 !text-xs">GPT-4o LECTURE SYNTHESIZER</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            AI Notes <span className="text-gradient">Summarizer</span>
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1.5 text-sm sm:text-base">
+            Transform PDFs, lecture slide decks, and readings into structured Flashcards, Quizzes, and Cheat Sheets.
+          </p>
         </div>
         {result && (
           <div className="flex gap-4">
             <Button variant="outline" onClick={() => { setResult(null); setFile(null); }}>Upload Another</Button>
-            <Button variant="gradient" onClick={downloadPDF} className="bg-gradient-to-r from-red-600 to-red-800 border-none">
+            <Button variant="gradient" onClick={downloadPDF} className="shadow-lg shadow-brand-primary/30">
               <Download className="w-4 h-4 mr-2" /> Download PDF
             </Button>
           </div>
@@ -142,16 +149,18 @@ export function NotesSummarizer() {
       <AnimatePresence mode="wait">
         {!result ? (
           <motion.div key="upload" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
-            <GlassCard className="p-12 border border-red-500/20 bg-black/40 max-w-3xl mx-auto">
+            <GlassCard className="p-10 sm:p-14 border border-brand-primary/20 bg-gradient-to-br from-white/90 via-white/50 to-transparent dark:from-white/[0.05] dark:via-white/[0.02] dark:to-transparent max-w-3xl mx-auto">
               <div 
-                className="border-2 border-dashed border-red-500/30 rounded-2xl p-12 text-center relative hover:border-red-500/60 transition-colors"
+                className="border-2 border-dashed border-brand-primary/40 rounded-3xl p-12 text-center relative hover:border-brand-primary/80 transition-all duration-300 bg-gray-50/50 dark:bg-white/[0.01]"
                 onDragOver={(e) => e.preventDefault()} onDrop={handleFileDrop}
               >
                 {!loading ? (
                   <div className="flex flex-col items-center">
-                    <UploadCloud className="w-16 h-16 text-red-500 mb-6" />
-                    <h3 className="text-2xl font-bold text-white mb-2">Upload Notes</h3>
-                    <p className="text-gray-400 mb-6">Supports PDF, DOCX, PPTX, TXT up to 10MB</p>
+                    <div className="w-20 h-20 bg-brand-gradient rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-brand-primary/30">
+                      <UploadCloud className="w-10 h-10 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">Drag & Drop your Document</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Supports PDF, DOCX, PPTX, and TXT up to 10MB</p>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileInput} accept=".pdf,.docx,.pptx,.txt" />
                     {file && (
                       <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10 flex items-center gap-3">

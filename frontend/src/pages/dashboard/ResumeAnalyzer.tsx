@@ -92,11 +92,18 @@ export function ResumeAnalyzer() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      {/* Supercharged Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Resume Analyzer</h1>
-          <p className="text-gray-500 mt-1">Get instant ATS feedback powered by Gemini AI</p>
+          <div className="inline-flex items-center gap-2 mb-3">
+            <span className="ai-badge !py-1 !px-3 !text-xs">ATS 99% SIMULATION ENGINE</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            AI Resume <span className="text-gradient">Analyzer</span>
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1.5 text-sm sm:text-base">
+            Get algorithmic ATS scoring, recruiter keyword gaps, and tailored career feedback in seconds.
+          </p>
         </div>
         {result && (
           <Button variant="outline" onClick={() => { setResult(null); setFile(null); }}>
@@ -114,19 +121,19 @@ export function ResumeAnalyzer() {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.4 }}
           >
-            <GlassCard className="p-12 border border-red-500/20 bg-black/40">
+            <GlassCard className="p-10 sm:p-14 border border-brand-primary/20 bg-gradient-to-br from-white/90 via-white/50 to-transparent dark:from-white/[0.05] dark:via-white/[0.02] dark:to-transparent">
               <div 
-                className="border-2 border-dashed border-red-500/30 rounded-2xl p-12 text-center relative hover:border-red-500/60 transition-colors duration-300"
+                className="border-2 border-dashed border-brand-primary/40 rounded-3xl p-12 text-center relative hover:border-brand-primary/80 transition-all duration-300 bg-gray-50/50 dark:bg-white/[0.01]"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleFileDrop}
               >
                 {!loading ? (
                   <div className="flex flex-col items-center">
-                    <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
-                      <UploadCloud className="w-10 h-10 text-red-500" />
+                    <div className="w-20 h-20 bg-brand-gradient rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-brand-primary/30">
+                      <UploadCloud className="w-10 h-10 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Drag & Drop your Resume</h3>
-                    <p className="text-gray-400 mb-6">Strictly PDF files up to 5MB</p>
+                    <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">Drag & Drop your Resume</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Strictly PDF documents up to 5MB</p>
                     
                     <input 
                       type="file" 

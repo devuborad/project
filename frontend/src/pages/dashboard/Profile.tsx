@@ -222,12 +222,12 @@ export function Profile() {
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-400">Major</label>
+                      <label className="text-sm font-medium text-gray-400">Department or Degree</label>
                       <input 
                         type="text" 
                         value={formData.major} 
                         onChange={e => setFormData({...formData, major: e.target.value})} 
-                        placeholder="Computer Science"
+                        placeholder="e.g. B.Tech Computer Science"
                         className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
                       />
                     </div>
@@ -259,12 +259,12 @@ export function Profile() {
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-400">Department</label>
+                      <label className="text-sm font-medium text-gray-400">Subjects Taught</label>
                       <input 
                         type="text" 
                         value={formData.department} 
                         onChange={e => setFormData({...formData, department: e.target.value})} 
-                        placeholder="Computer Science"
+                        placeholder="e.g. Data Structures"
                         className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-brand-primary"
                       />
                     </div>

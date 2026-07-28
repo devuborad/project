@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Filter, BookOpen, FileText, Download, PlayCircle, Folder, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, BookOpen, FileText, Download, Folder, Loader2 } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { motion } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
@@ -86,22 +87,35 @@ export function LearningHub() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col gap-8">
-      {/* Header & Search */}
+    <div className="max-w-7xl mx-auto flex flex-col gap-8 pb-12">
+      {/* Supercharged Header & Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Smart Learning Hub</h1>
-          <p className="text-gray-600 dark:text-gray-400">Access AI-organized notes, materials, and past papers.</p>
+          <div className="inline-flex items-center gap-2 mb-2.5">
+            <span className="ai-badge !py-1 !px-3 !text-xs">SEMANTIC VECTOR LIBRARY</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-1.5 tracking-tight">
+            Smart Learning <span className="text-gradient">Hub</span>
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+            Access AI-indexed notes, lecture slide decks, and academic past papers across every discipline.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input 
               type="text" 
-              placeholder="Search materials..." 
-              className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full py-2 pl-9 pr-4 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-brand-primary focus:bg-gray-200 dark:bg-white/10 w-full md:w-64 transition-all"
+              placeholder="Search concepts or formulas..." 
+              className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-brand-primary focus:bg-gray-200 dark:bg-white/10 w-full sm:w-64 transition-all"
             />
           </div>
+          <Link to="/dashboard/student-assignments" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full whitespace-nowrap shadow-sm">
+              <FileText className="w-4 h-4 mr-2" />
+              Pending Assignments
+            </Button>
+          </Link>
         </div>
       </div>
 

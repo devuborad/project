@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Button } from '../../components/ui/Button';
-import { FileText, UploadCloud, CheckCircle2, Clock, Calendar, Search } from 'lucide-react';
+import { UploadCloud, CheckCircle2, Clock, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function StudentAssignments() {
   const [assignments, setAssignments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   
   // Submit modal
   const [showSubmitModal, setShowSubmitModal] = useState(false);

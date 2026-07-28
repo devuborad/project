@@ -15,6 +15,9 @@ export default {
           primary: '#ff1f4d',
           secondary: '#ff4d6d',
           accent: '#ff003c',
+          glow: 'rgba(255, 31, 77, 0.35)',
+          purple: '#a855f7',
+          cyan: '#06b6d4',
         },
         card: 'rgba(255, 255, 255, 0.06)',
       },
@@ -23,14 +26,18 @@ export default {
       },
       backgroundImage: {
         'brand-gradient': 'linear-gradient(135deg, #ff1f4d 0%, #ff003c 100%)',
-        'glass-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
-        'glass-gradient-hover': 'linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%)',
+        'ai-gradient': 'linear-gradient(135deg, #ff1f4d 0%, #a855f7 50%, #3b82f6 100%)',
+        'glass-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)',
+        'glass-gradient-hover': 'linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 100%)',
+        'shimmer-gradient': 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%)',
       },
       animation: {
         'aurora': 'aurora 15s ease infinite',
         'blob': 'blob 7s infinite',
         'float': 'float 6s ease-in-out infinite',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'shimmer': 'shimmer 2.5s linear infinite',
+        'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
       },
       keyframes: {
         aurora: {
@@ -45,8 +52,16 @@ export default {
         },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-20px)' },
-        }
+          '50%': { transform: 'translateY(-15px)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        'glow-pulse': {
+          '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+          '50%': { opacity: '0.85', transform: 'scale(1.04)' },
+        },
       }
     },
   },

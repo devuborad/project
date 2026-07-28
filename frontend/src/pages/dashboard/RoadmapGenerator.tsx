@@ -12,7 +12,7 @@ import jsPDF from 'jspdf';
 
 export function RoadmapGenerator() {
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('Overview');
@@ -212,15 +212,23 @@ export function RoadmapGenerator() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      {/* Supercharged Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Roadmap Generator</h1>
-          <p className="text-gray-500 mt-1">Navigate your career with personalized, AI-driven pathways</p>
+          <div className="inline-flex items-center gap-2 mb-3">
+            <span className="ai-badge !py-1 !px-3 !text-xs">SEMESTER ROADMAP ARCHITECT</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            AI Roadmap <span className="text-gradient">Generator</span>
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1.5 text-sm sm:text-base">
+            Navigate your career with personalized, AI-generated semester milestones and custom study modules.
+          </p>
         </div>
         {result && (
           <div className="flex gap-4">
             <Button variant="outline" onClick={() => { setResult(null); setStep(1); }}>Start Over</Button>
-            <Button variant="gradient" onClick={downloadPDF} className="bg-gradient-to-r from-red-600 to-red-800 border-none">
+            <Button variant="gradient" onClick={downloadPDF} className="shadow-lg shadow-brand-primary/30">
               <Download className="w-4 h-4 mr-2" /> Download PDF
             </Button>
           </div>
