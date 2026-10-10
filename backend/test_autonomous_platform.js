@@ -40,6 +40,11 @@ async function verifyPlatform() {
       console.log(`  ✔ Table '${table}' verified.`);
     }
 
+    // Ensure test user exists for foreign key constraints
+    await db.execute(
+      `INSERT IGNORE INTO users (id, first_name, last_name, email, password_hash, role) VALUES (1, 'Test', 'User', 'test@campus.ai', 'hash', 'student')`
+    );
+
     // 2. Test RAG Vector Knowledge Base
     console.log('\n[2/5] Testing RAG Service (Text Chunking & Semantic Vector Search)...');
     let [noteRows] = await db.execute(`SELECT id FROM uploaded_notes LIMIT 1`).catch(() => [[]]);

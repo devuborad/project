@@ -32,6 +32,7 @@ export function Login() {
       // Save token and redirect
       localStorage.setItem('campus_token', data.token);
       localStorage.setItem('campus_user', JSON.stringify(data.user));
+      localStorage.removeItem('campus_demo_mode');
       localStorage.setItem('campus_last_email', email);
       navigate('/dashboard');
     } catch (err: any) {
@@ -39,21 +40,6 @@ export function Login() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoJudgeLogin = () => {
-    const demoAdminUser = {
-      id: 1,
-      email: 'admin@campus.edu',
-      first_name: 'Hackathon',
-      last_name: 'Judge',
-      role: 'admin',
-      avatar_url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Judge'
-    };
-    localStorage.setItem('campus_token', 'demo-judge-token-2026');
-    localStorage.setItem('campus_user', JSON.stringify(demoAdminUser));
-    localStorage.setItem('campus_demo_mode', 'true');
-    navigate('/dashboard');
   };
 
   return (
@@ -142,17 +128,6 @@ export function Login() {
             </>
           )}
         </Button>
-
-        {/* Hackathon Judge One-Click Demo Mode */}
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={handleDemoJudgeLogin}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-purple-500/20 hover:from-amber-500/30 hover:via-orange-500/30 hover:to-purple-500/30 border-2 border-amber-500/40 text-amber-500 dark:text-amber-400 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:scale-[1.01]"
-          >
-            <span>🚀 Explore as Hackathon Judge (Demo Mode)</span>
-          </button>
-        </div>
       </form>
 
       <div className="mt-8 pt-6 border-t border-gray-200/80 dark:border-white/10 text-center">

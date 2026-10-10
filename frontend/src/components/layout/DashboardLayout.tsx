@@ -264,11 +264,6 @@ export function DashboardLayout() {
               <Bot className="w-3.5 h-3.5 animate-bounce" />
               <span>Autonomous Agent Platform Active</span>
             </div>
-            {localStorage.getItem('campus_demo_mode') === 'true' && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold shadow-sm animate-pulse">
-                <span>🚀 Hackathon Judge Preview (Seeded Data)</span>
-              </div>
-            )}
           </div>
           
           <div className="flex items-center gap-3.5">
